@@ -1,0 +1,209 @@
+<div class="report-chart" [class.report-chart--donut]="type === 'donut'" *ngIf="labels?.length && series?.length">
+  <div class="report-chart__head" *ngIf="title">
+    <div class="report-chart__title">{{ title }}</div>
+    <div class="report-chart__subtitle" *ngIf="subtitle">{{ subtitle }}</div>
+  </div>
+
+  <!-- ============ Donut / Pie chart ============ -->
+  <div class="report-chart__donut-wrap" *ngIf="type === 'donut'">
+    <svg
+      class="report-chart__svg report-chart__svg--donut"
+      [attr.viewBox]="'0 0 ' + donutSize + ' ' + donutSize"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      [attr.aria-label]="title || 'Donut chart'"
+    >
+      <circle
+        class="donut-track"
+        [attr.cx]="donutCx"
+        [attr.cy]="donutCy"
+        [attr.r]="donutR"
+        fill="none"
+        [attr.stroke-width]="donutStroke"
+      />
+      <g [attr.transform]="'rotate(-90 ' + donutCx + ' ' + donutCy + ')'">
+        <circle
+          *ngFor="let seg of donutSegments; let i = index"
+          class="donut-segment"
+          [attr.cx]="donutCx"
+          [attr.cy]="donutCy"
+          [attr.r]="donutR"
+          fill="none"
+          [attr.stroke]="seg.color"
+          [style.stroke]="seg.color"
+          [attr.stroke-width]="donutStroke"
+          [attr.stroke-dasharray]="seg.dasharray"
+          [style.stroke-dasharray]="seg.dasharray"
+          [attr.stroke-dashoffset]="seg.dashoffset"
+          [style.stroke-dashoffset]="seg.dashoffset"
+          stroke-linecap="butt"
+        >
+          <title>{{ seg.label }}: {{ formatTick(seg.value) }} ({{ formatPercent(seg.percent) }})</title>
+        </circle>
+      </g>
+      <text class="donut-center-value" text-anchor="middle" [attr.x]="donutCx" [attr.y]="donutCy - 2">
+        {{ formatTick(donutTotal) }}
+      </text>
+      <text class="donut-center-label" text-anchor="middle" [attr.x]="donutCx" [attr.y]="donutCy + 16">
+        Total
+      </text>
+    </svg>
+
+    <div class="donut-legend">
+      <div class="donut-legend__row" *ngFor="let seg of donutSegments">
+        <span class="donut-legend__swatch" [style.background]="seg.color"></span>
+        <span class="donut-legend__label">{{ seg.label }}</span>
+        <span class="donut-legend__value">{{ formatTick(seg.value) }}</span>
+        <span class="donut-legend__pct">{{ formatPercent(seg.percent) }}</span>
+      </div>
+      <div class="donut-legend__row donut-legend__row--empty" *ngIf="!donutSegments.length">
+        No data for this period.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Cartesian charts (bar / line / area / horizontal-bar) ============ -->
+  <ng-container *ngIf="type !== 'donut'">
+    <svg
+      class="report-chart__svg"
+      [attr.viewBox]="'0 0 ' + viewW + ' ' + height"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      [attr.aria-label]="title || 'Chart'"
+    >
+      <defs>
+        <linearGradient
+          *ngFor="let s of series; let si = index"
+          [attr.id]="'barGrad' + si"
+          x1="0" y1="0" x2="0" y2="1"
+        >
+          <stop offset="0%" [attr.stop-color]="color(si, s)" stop-opacity="1" />
+          <stop offset="100%" [attr.stop-color]="color(si, s)" stop-opacity="0.72" />
+        </linearGradient>
+        <linearGradient
+          *ngFor="let s of series; let si = index"
+          [attr.id]="'areaGrad' + si"
+          x1="0" y1="0" x2="0" y2="1"
+        >
+          <stop offset="0%" [attr.stop-color]="color(si, s)" stop-opacity="0.32" />
+          <stop offset="100%" [attr.stop-color]="color(si, s)" stop-opacity="0.02" />
+        </linearGradient>
+      </defs>
+
+      <!-- Grid + Y axis ticks -->
+      <ng-container *ngIf="type !== 'horizontal-bar'">
+        <g *ngFor="let t of ticks">
+          <line
+            class="grid-line"
+            [attr.x1]="padL"
+            [attr.x2]="padL + chartW"
+            [attr.y1]="yFor(t)"
+            [attr.y2]="yFor(t)"
+          />
+          <text class="tick-label" text-anchor="end" [attr.x]="padL - 6" [attr.y]="yFor(t) + 3">
+            {{ formatTick(t) }}
+          </text>
+        </g>
+        <line class="axis" [attr.x1]="padL" [attr.y1]="padT" [attr.x2]="padL" [attr.y2]="padT + chartH" />
+        <line class="axis" [attr.x1]="padL" [attr.y1]="padT + chartH" [attr.x2]="padL + chartW" [attr.y2]="padT + chartH" />
+      </ng-container>
+
+      <!-- Vertical bars -->
+      <ng-container *ngIf="type === 'bar'">
+        <ng-container *ngFor="let s of series; let si = index">
+          <rect
+            *ngFor="let v of s.values; let i = index"
+            class="bar"
+            [attr.x]="xForBar(i, si, series.length)"
+            [attr.y]="yFor(v)"
+            [attr.width]="barWidth(series.length)"
+            [attr.height]="Math.max(0, padT + chartH - yFor(v))"
+            [attr.fill]="'url(#barGrad' + si + ')'"
+            [style.animation-delay.ms]="i * 30 + si * 60"
+            rx="3"
+          >
+            <title>{{ labels[i] }} — {{ s.name }}: {{ formatTick(v) }}</title>
+          </rect>
+        </ng-container>
+        <text
+          *ngFor="let label of labels; let i = index"
+          class="cat-label"
+          text-anchor="middle"
+          [attr.x]="labelX(i)"
+          [attr.y]="padT + chartH + 14"
+        >
+          {{ truncatedLabel(label, 10) }}
+        </text>
+      </ng-container>
+
+      <!-- Line / Area chart -->
+      <ng-container *ngIf="type === 'line' || type === 'area'">
+        <ng-container *ngFor="let s of series; let si = index">
+          <path *ngIf="type === 'area'" class="area-fill" [attr.d]="areaPath(s)" [attr.fill]="'url(#areaGrad' + si + ')'" />
+          <path class="line-path" [attr.d]="linePath(s)" [attr.stroke]="color(si, s)" fill="none" stroke-width="2.4" />
+          <circle
+            *ngFor="let v of s.values; let i = index"
+            class="line-dot"
+            [attr.cx]="xForLine(i)"
+            [attr.cy]="yFor(v)"
+            r="3.5"
+            [attr.fill]="color(si, s)"
+          >
+            <title>{{ labels[i] }} — {{ s.name }}: {{ formatTick(v) }}</title>
+          </circle>
+        </ng-container>
+        <text
+          *ngFor="let label of labels; let i = index"
+          class="cat-label"
+          text-anchor="middle"
+          [attr.x]="labelX(i)"
+          [attr.y]="padT + chartH + 14"
+        >
+          {{ truncatedLabel(label, 10) }}
+        </text>
+      </ng-container>
+
+      <!-- Horizontal bars -->
+      <ng-container *ngIf="type === 'horizontal-bar'">
+        <g *ngFor="let label of labels; let i = index">
+          <text
+            class="h-label"
+            text-anchor="end"
+            [attr.x]="padL - 10"
+            [attr.y]="hBarY(i) + hBarHeight() / 2 + 3"
+          >
+            <title>{{ label }}</title>
+            {{ hBarLabel(label) }}
+          </text>
+          <rect
+            class="bar"
+            [attr.x]="padL"
+            [attr.y]="hBarY(i)"
+            [attr.width]="hBarWidth(valueAt(0, i))"
+            [attr.height]="hBarHeight()"
+            [attr.fill]="'url(#barGrad0)'"
+            [style.animation-delay.ms]="i * 45"
+            rx="3"
+          >
+            <title>{{ label }}: {{ formatTick(valueAt(0, i)) }}</title>
+          </rect>
+          <text
+            class="h-value"
+            [attr.x]="padL + hBarWidth(valueAt(0, i)) + 6"
+            [attr.y]="hBarY(i) + hBarHeight() / 2 + 3"
+          >
+            {{ formatTick(valueAt(0, i)) }}
+          </text>
+        </g>
+      </ng-container>
+    </svg>
+
+    <!-- Legend -->
+    <div class="report-chart__legend" *ngIf="series.length > 1 || (series.length === 1 && series[0].name)">
+      <span class="legend-item" *ngFor="let s of series; let i = index">
+        <span class="legend-swatch" [style.background]="color(i, s)"></span>
+        {{ s.name }}
+      </span>
+    </div>
+  </ng-container>
+</div>

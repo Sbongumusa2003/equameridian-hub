@@ -1,0 +1,98 @@
+<div class="breadcrumb">
+  <a routerLink="/contractor/quotations">My Quotations</a>
+  <span>›</span>
+  <span>Quotation #{{ quotation?.quotationID }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading quotation...</div>
+<div class="empty-state" *ngIf="!loading && !quotation">Quotation not found.</div>
+
+<div class="page-layout" *ngIf="!loading && quotation">
+  <div class="page-layout__main">
+    <div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <div class="panel">
+      <div class="listing-card__header">
+        <h3 class="detail-title">{{ quotation.listingTitle }}</h3>
+        <app-status-badge [status]="quotation.status"></app-status-badge>
+      </div>
+      <p class="text-muted">Supplier: {{ quotation.supplierName }}</p>
+
+ <div class="info-grid mt-20" >
+        <div><small>Rental Start</small><span>{{ quotation.rentalStartDate | date:'mediumDate' }}</span></div>
+        <div><small>Rental End</small><span>{{ quotation.rentalEndDate | date:'mediumDate' }}</span></div>
+        <div><small>Quantity</small><span>{{ quotation.quantity }}</span></div>
+        <div><small>Hire Type</small><span>{{ quotation.hireType }} Hire</span></div>
+        <div><small>Establishment</small><span>{{ quotation.fulfillmentMethod }}</span></div>
+      </div>
+      <div class="info-row" *ngIf="quotation.fulfillmentMethod === 'Supplier Delivery'">
+        <span>Delivery Address</span><strong>{{ quotation.deliveryAddress }}</strong>
+      </div>
+      <div class="info-row" *ngIf="quotation.specialRequirements">
+        <span>Special Requirements</span><strong>{{ quotation.specialRequirements }}</strong>
+      </div>
+      <div class="info-row"><span>Preferred Contact</span><strong>{{ quotation.preferredContact }}</strong></div>
+    </div>
+
+    <div class="panel" *ngIf="quotation.dailyRateZAR">
+      <div class="panel__title">Supplier's Quote</div>
+      <div class="info-row"><span>Daily Rate</span><strong>R {{ quotation.dailyRateZAR | number }}</strong></div>
+      <div class="info-row" *ngIf="quotation.weeklyRateZAR">
+        <span>Weekly Rate</span><strong>R {{ quotation.weeklyRateZAR | number }}</strong>
+      </div>
+      <div class="info-row" *ngIf="quotation.fulfillmentMethod === 'Supplier Delivery'">
+        <span>Delivery Fee</span><strong>R {{ quotation.deliveryFee | number }}</strong>
+      </div>
+      <div class="info-row"><span>Estimated Total</span><strong>R {{ quotation.estimatedTotal | number }}</strong></div>
+      <div class="info-row"><span>Valid Until</span><strong>{{ quotation.quoteValidUntil | date:'mediumDate' }}</strong></div>
+ <p class="text-muted mt-12" *ngIf="quotation.notesToCustomer" >
+        "{{ quotation.notesToCustomer }}"
+      </p>
+    </div>
+
+    <div class="panel" *ngIf="quotation.statusHistory?.length">
+      <div class="panel__title">Status History</div>
+      <div class="audit-item" *ngFor="let e of quotation.statusHistory">
+        <strong>{{ e.status }}</strong>
+        <small>{{ e.date | date:'medium' }}</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="panel" *ngIf="quotation.canAccept || quotation.canReject">
+      <div class="panel__title">Actions</div>
+      <button class="btn btn--primary btn--full mb-8"
+              *ngIf="quotation.canAccept" [disabled]="processing" (click)="accept()">
+        {{ processing ? 'Processing...' : 'Accept Quote' }}
+      </button>
+      <button class="btn btn--danger-outline btn--full"
+              *ngIf="quotation.canReject" [disabled]="processing" (click)="openReject()">
+        Reject Quote
+      </button>
+    </div>
+    <div class="info-panel">
+      <h4>Accepting this quote will:</h4>
+      <ul>
+        <li>Create a confirmed booking</li>
+        <li>Generate your invoice automatically</li>
+        <li>Generate a lease agreement for both parties to sign</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showRejectDialog" (click)="showRejectDialog = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Reject Quotation</h3>
+    <p>Let the supplier know why you're declining this quote (optional).</p>
+    <div class="form-group">
+      <label>Reason</label>
+      <textarea [(ngModel)]="rejectReason" placeholder="e.g. price too high, found another supplier..."></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--ghost" (click)="showRejectDialog = false">Cancel</button>
+      <button class="btn btn--danger" [disabled]="processing" (click)="confirmReject()">Confirm Reject</button>
+    </div>
+  </div>
+</div>

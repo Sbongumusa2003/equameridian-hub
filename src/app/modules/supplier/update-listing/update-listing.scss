@@ -1,0 +1,24 @@
+.image-upload-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.image-slot {
+  width: 100px;
+  height: 80px;
+  background: #f0f0f0;
+  border-radius: 8px;
+
+  &--add {
+    border: 2px dashed #ddd;
+    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #bbb;
+    cursor: pointer;
+  }
+}

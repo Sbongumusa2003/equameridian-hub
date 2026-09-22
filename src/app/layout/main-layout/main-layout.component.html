@@ -1,0 +1,209 @@
+<div class="app-shell">
+  <!-- Pop-up notifications — appear when a new item lands (e.g. a Supplier registration or a
+       listing waiting for review, for Admins) and auto-dismiss after a few seconds. -->
+  <div class="toast-stack" *ngIf="toasts.length > 0" aria-live="polite">
+    <div class="toast-card" *ngFor="let toast of toasts" (click)="openToast(toast)">
+      <div class="toast-card__body">
+        <strong>{{ toast.title }}</strong>
+        <p>{{ toast.body }}</p>
+      </div>
+      <button type="button" class="toast-card__close" (click)="dismissToast(toast.toastId); $event.stopPropagation()" aria-label="Dismiss">✕</button>
+    </div>
+  </div>
+
+  <!-- Mobile top app bar (Ionic-style toolbar; only visible below the split-pane breakpoint) -->
+  <header class="topbar">
+    <button class="topbar__menu-btn" type="button" (click)="toggleMenu()"
+            [attr.aria-expanded]="menuOpen" aria-label="Toggle navigation menu" aria-controls="main-sidebar">
+      <span class="hamburger" [class.hamburger--open]="menuOpen"><span></span><span></span><span></span></span>
+    </button>
+    <a routerLink="/" class="topbar__brand" title="Back to marketplace home">
+      <img class="brand-logo brand-logo--topbar" src="assets/brand/logo-mark.png" width="28" height="28" alt="" />
+      EquaMeridian Hub
+    </a>
+    <a routerLink="/account/help" class="topbar__bell" aria-label="Help">❓</a>
+    <a routerLink="/account/notifications" class="topbar__bell" aria-label="Notifications">
+      🔔<span class="nav-badge" *ngIf="unreadCount > 0">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+    </a>
+  </header>
+
+  <!-- Backdrop for the off-canvas drawer on mobile/tablet -->
+  <div class="sidebar-backdrop" *ngIf="menuOpen" (click)="closeMenu()"></div>
+
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="main-sidebar" [class.sidebar--open]="menuOpen">
+    <a routerLink="/" class="sidebar__brand" title="Back to marketplace home" (click)="closeMenu()">
+      <img class="brand-logo brand-logo--sidebar" src="assets/brand/logo-mark.png" width="40" height="40" alt="EquaMeridian" />
+      <div>
+        <span class="logo-text">EquaMeridian Hub</span>
+        <span class="sidebar__role">
+          {{ isAdmin ? 'Admin Panel' : isSupplier ? 'Supplier Panel' : 'Contractor Panel' }}
+        </span>
+      </div>
+    </a>
+
+    <nav class="sidebar__nav" (click)="closeMenu()">
+      <ng-container *ngIf="isAdmin">
+        <div class="nav-group nav-group--collapsible" *ngIf="canSeeAdminGroup('overview')" [class.nav-group--open]="isAdminGroupOpen('overview')">
+          <button type="button" class="nav-label nav-label--toggle" (click)="toggleAdminGroup('overview', $event)" [attr.aria-expanded]="isAdminGroupOpen('overview')">
+            <span>Overview</span><span class="nav-chevron"></span>
+          </button>
+          <div class="nav-group__links">
+            <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
+          </div>
+        </div>
+        <div class="nav-group nav-group--collapsible" *ngIf="canSeeAdminGroup('users')" [class.nav-group--open]="isAdminGroupOpen('users')">
+          <button type="button" class="nav-label nav-label--toggle" (click)="toggleAdminGroup('users', $event)" [attr.aria-expanded]="isAdminGroupOpen('users')">
+            <span>Users</span><span class="nav-chevron"></span>
+          </button>
+          <div class="nav-group__links">
+            <a *ngIf="can('Users.ManageInternal')" routerLink="/admin/users" routerLinkActive="active" class="nav-link">View Users</a>
+          </div>
+        </div>
+        <div class="nav-group nav-group--collapsible" *ngIf="canSeeAdminGroup('listings')" [class.nav-group--open]="isAdminGroupOpen('listings')">
+          <button type="button" class="nav-label nav-label--toggle" (click)="toggleAdminGroup('listings', $event)" [attr.aria-expanded]="isAdminGroupOpen('listings')">
+            <span>Listings</span><span class="nav-chevron"></span>
+          </button>
+          <div class="nav-group__links">
+            <a *ngIf="can('Listings.Manage')" routerLink="/admin/listings" routerLinkActive="active" class="nav-link">View Listings</a>
+            <a *ngIf="can('Inspections.Manage')" routerLink="/admin/inspections" routerLinkActive="active" class="nav-link">Inspections</a>
+          </div>
+        </div>
+        <div class="nav-group nav-group--collapsible" *ngIf="canSeeAdminGroup('resolution')" [class.nav-group--open]="isAdminGroupOpen('resolution')">
+          <button type="button" class="nav-label nav-label--toggle" (click)="toggleAdminGroup('resolution', $event)" [attr.aria-expanded]="isAdminGroupOpen('resolution')">
+            <span>Resolution Center</span><span class="nav-chevron"></span>
+          </button>
+          <div class="nav-group__links">
+            <a *ngIf="can('Disputes.Manage')" routerLink="/admin/disputes" routerLinkActive="active" class="nav-link">Disputes</a>
+            <a *ngIf="can('Refunds.Manage')" routerLink="/admin/refunds" routerLinkActive="active" class="nav-link">Refunds</a>
+            <a *ngIf="can('Payouts.Manage')" routerLink="/admin/payouts" routerLinkActive="active" class="nav-link">Payouts</a>
+            <a *ngIf="can('Invoices.View')" routerLink="/admin/invoices" routerLinkActive="active" class="nav-link">Invoices</a>
+          </div>
+        </div>
+        <div class="nav-group nav-group--collapsible" *ngIf="canSeeAdminGroup('compliance')" [class.nav-group--open]="isAdminGroupOpen('compliance')">
+          <button type="button" class="nav-label nav-label--toggle" (click)="toggleAdminGroup('compliance', $event)" [attr.aria-expanded]="isAdminGroupOpen('compliance')">
+            <span>Compliance</span><span class="nav-chevron"></span>
+          </button>
+          <div class="nav-group__links">
+            <a *ngIf="can('ContentRules.Manage')" routerLink="/admin/content-rules" routerLinkActive="active" class="nav-link">Content Rules</a>
+            <a *ngIf="can('Reviews.Manage')" routerLink="/admin/reviews" routerLinkActive="active" class="nav-link">Reviews</a>
+          </div>
+        </div>
+        <div class="nav-group nav-group--collapsible" *ngIf="canSeeAdminGroup('marketing')" [class.nav-group--open]="isAdminGroupOpen('marketing')">
+          <button type="button" class="nav-label nav-label--toggle" (click)="toggleAdminGroup('marketing', $event)" [attr.aria-expanded]="isAdminGroupOpen('marketing')">
+            <span>Marketing</span><span class="nav-chevron"></span>
+          </button>
+          <div class="nav-group__links">
+            <a *ngIf="can('Campaigns.Manage')" routerLink="/admin/campaigns" routerLinkActive="active" class="nav-link">Campaigns</a>
+            <a *ngIf="can('Announcements.Manage')" routerLink="/admin/announcements" routerLinkActive="active" class="nav-link">Announcements</a>
+          </div>
+        </div>
+        <div class="nav-group nav-group--collapsible" *ngIf="canSeeAdminGroup('analytics')" [class.nav-group--open]="isAdminGroupOpen('analytics')">
+          <button type="button" class="nav-label nav-label--toggle" (click)="toggleAdminGroup('analytics', $event)" [attr.aria-expanded]="isAdminGroupOpen('analytics')">
+            <span>Analytics</span><span class="nav-chevron"></span>
+          </button>
+          <div class="nav-group__links">
+            <a *ngIf="can('Reports.View') || can('Reports.Export')" routerLink="/admin/reports" routerLinkActive="active" class="nav-link">Reports</a>
+          </div>
+        </div>
+        <div class="nav-group nav-group--collapsible" *ngIf="canSeeAdminGroup('platform')" [class.nav-group--open]="isAdminGroupOpen('platform')">
+          <button type="button" class="nav-label nav-label--toggle" (click)="toggleAdminGroup('platform', $event)" [attr.aria-expanded]="isAdminGroupOpen('platform')">
+            <span>Platform</span><span class="nav-chevron"></span>
+          </button>
+          <div class="nav-group__links">
+            <a *ngIf="can('PlatformFees.Manage')" routerLink="/admin/platform-fees" routerLinkActive="active" class="nav-link">Platform Fees</a>
+            <a *ngIf="can('Locations.Manage')" routerLink="/admin/location-tree" routerLinkActive="active" class="nav-link">Location Tree</a>
+            <a *ngIf="can('Roles.Manage')" routerLink="/admin/roles" routerLinkActive="active" class="nav-link">Roles &amp; Permissions</a>
+            <a *ngIf="can('Timers.Manage')" routerLink="/admin/timer-configuration" routerLinkActive="active" class="nav-link">Timer Configuration</a>
+            <a *ngIf="can('DataExport.Manage')" routerLink="/admin/data-export" routerLinkActive="active" class="nav-link">Data Export</a>
+            <a *ngIf="can('Backup.Manage')" routerLink="/admin/backup" routerLinkActive="active" class="nav-link">Backup &amp; Restore</a>
+            <a *ngIf="can('AuditLog.View')" routerLink="/admin/audit-log" routerLinkActive="active" class="nav-link">Audit Log</a>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="isContractor">
+        <div class="nav-group">
+          <div class="nav-label">MACHINERY</div>
+          <a routerLink="/contractor/browse" routerLinkActive="active" class="nav-link">Browse Listings</a>
+          <a routerLink="/contractor/compare" routerLinkActive="active" class="nav-link">Compare</a>
+          <a routerLink="/contractor/wishlist" routerLinkActive="active" class="nav-link">Wishlist</a>
+          <a routerLink="/contractor/inspections" routerLinkActive="active" class="nav-link">Inspections</a>
+          <a routerLink="/contractor/my-reviews" routerLinkActive="active" class="nav-link">My Reviews</a>
+          <a routerLink="/contractor/cart" routerLinkActive="active" class="nav-link nav-link--badge">
+            Cart
+            <span class="nav-badge" *ngIf="cartItemCount > 0">{{ cartItemCount > 9 ? '9+' : cartItemCount }}</span>
+          </a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">QUOTATIONS</div>
+          <a routerLink="/contractor/quotations" routerLinkActive="active" class="nav-link">My Quotations</a>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="isSupplier">
+        <div class="nav-group">
+          <div class="nav-label">MY LISTINGS</div>
+          <a routerLink="/supplier/listings/create" routerLinkActive="active" class="nav-link">Create Listing</a>
+          <a routerLink="/supplier/listings" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">My Listings</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">QUOTATIONS</div>
+          <a routerLink="/supplier/quotations" routerLinkActive="active" class="nav-link">Quotation Requests</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">INSPECTIONS</div>
+          <a routerLink="/supplier/inspections" routerLinkActive="active" class="nav-link">Inspections</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">PAYOUTS</div>
+          <a routerLink="/supplier/payouts" routerLinkActive="active" class="nav-link">Payouts</a>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="isContractor || isSupplier">
+        <div class="nav-group">
+          <div class="nav-label">TRANSACTIONS</div>
+          <a routerLink="/transactions/bookings" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Bookings &amp; Deliveries</a>
+          <a routerLink="/transactions/bookings/calendar" routerLinkActive="active" class="nav-link">Equipment Calendar</a>
+          <a routerLink="/transactions/invoices" routerLinkActive="active" class="nav-link">Invoices</a>
+          <a routerLink="/transactions/payments" routerLinkActive="active" class="nav-link">Payment History</a>
+          <a routerLink="/transactions/lease-agreements" routerLinkActive="active" class="nav-link">Lease Agreements</a>
+          <a routerLink="/transactions/disputes" routerLinkActive="active" class="nav-link">My Disputes</a>
+        </div>
+      </ng-container>
+
+      <div class="nav-group">
+        <div class="nav-label">ACCOUNT</div>
+        <a routerLink="/account/profile" routerLinkActive="active" class="nav-link">My Profile</a>
+        <a *ngIf="!isAdmin" routerLink="/account/documents" routerLinkActive="active" class="nav-link">Documents</a>
+        <a routerLink="/account/messages" routerLinkActive="active" class="nav-link">Messages</a>
+        <a routerLink="/account/notifications" routerLinkActive="active" class="nav-link nav-link--badge">
+          Notifications
+          <span class="nav-badge" *ngIf="unreadCount > 0">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+        </a>
+        <a routerLink="/account/help" routerLinkActive="active" class="nav-link">Help</a>
+      </div>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="user-pill">
+        <div class="avatar">{{ initials }}</div>
+        <div>
+          <strong>{{ auth.currentUser?.fullName }}</strong>
+          <small>{{ auth.currentUser?.role }}</small>
+        </div>
+      </div>
+      <button type="button" class="btn btn--ghost btn--sm btn-signout" (click)="logout()" title="Sign out and return to the marketplace">
+        Sign out
+      </button>
+    </div>
+  </aside>
+
+  <main id="main-content" class="main-content" tabindex="-1">
+    <router-outlet></router-outlet>
+  </main>
+
+  <app-chatbot-widget></app-chatbot-widget>
+</div>

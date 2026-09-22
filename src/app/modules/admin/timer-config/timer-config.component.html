@@ -1,0 +1,73 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Timer Configuration</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Controls the background job that expires unactioned quotations</p>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading configuration...</div>
+
+<div class="page-layout" *ngIf="!loading">
+  <div class="page-layout__main">
+    <div class="panel">
+      <div class="alert alert--success" *ngIf="message">{{ message }}</div>
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+      <div class="info-row" *ngIf="config">
+        <span>Last Run</span>
+        <strong>{{ config.lastRunAt ? (config.lastRunAt | date:'dd MMM yyyy HH:mm':'Africa/Johannesburg') : 'Never run' }}</strong>
+      </div>
+      <div class="info-row" *ngIf="config && config.lastRunExpiredCount != null">
+        <span>Quotes Expired (last run)</span>
+        <strong>{{ config.lastRunExpiredCount }}</strong>
+      </div>
+
+ <div class="form-section mt-20" >
+        <div class="form-row">
+          <div class="form-group">
+            <label>Check Interval (minutes)</label>
+            <input type="number" min="1" [(ngModel)]="form.intervalMinutes" name="intervalMinutes" />
+          </div>
+          <div class="form-group">
+            <label>Quote Expiry Window (hours)</label>
+            <input type="number" min="1" [(ngModel)]="form.quoteExpiryHours" name="quoteExpiryHours" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Session idle logout (minutes)</label>
+          <input type="number" min="1" max="480" [(ngModel)]="form.sessionIdleMinutes" name="sessionIdleMinutes" />
+          <small class="hint">Signed-in users are logged out after this many minutes without mouse, keyboard or touch activity.</small>
+        </div>
+        <div class="form-group">
+          <label class="flex flex-center gap-8">
+            <input type="checkbox" [(ngModel)]="form.isEnabled" name="isEnabled" class="w-auto" />
+            Timer Enabled
+          </label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--outline" [disabled]="running" (click)="runNow()">
+          {{ running ? 'Running...' : 'Run Now' }}
+        </button>
+        <button class="btn btn--primary" [disabled]="saving" (click)="save()">
+          {{ saving ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel">
+      <h4>How this works</h4>
+      <ul>
+        <li>The job runs on the configured interval and expires quotations older than the expiry window.</li>
+        <li>Use "Run Now" to trigger an off-cycle run immediately.</li>
+        <li>Disabling the timer pauses automatic expiry — quotations will need manual handling.</li>
+        <li>Session idle logout is enforced in the browser. Save this page to apply the new idle window.</li>
+      </ul>
+    </div>
+  </div>
+</div>

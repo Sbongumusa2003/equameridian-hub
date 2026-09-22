@@ -1,0 +1,134 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Reviews</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="reviews"></app-context-help>
+    <p>Moderate contractor reviews left on supplier listings</p>
+  </div>
+</div>
+
+<div class="page-layout">
+  <div class="page-layout__main">
+    <div class="panel reviews-panel">
+      <div class="alert alert--success" *ngIf="message">{{ message }}</div>
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+      <div class="filter-bar reviews-filters">
+        <div class="form-group mb-0">
+          <label>Status</label>
+          <select [(ngModel)]="statusFilter" (change)="applyFilters()">
+            <option value="">All (excl. deleted)</option>
+            <option value="Published">Published</option>
+            <option value="Deleted">Deleted</option>
+          </select>
+        </div>
+        <div class="form-group mb-0">
+          <label>Star rating</label>
+          <select [(ngModel)]="starFilter" (change)="applyFilters()">
+            <option [ngValue]="null">Any</option>
+            <option *ngFor="let s of [5,4,3,2,1]" [ngValue]="s">{{ s }} star</option>
+          </select>
+        </div>
+        <div class="form-group reviews-filters__search mb-0">
+          <label>Search</label>
+          <input type="text" [(ngModel)]="search"
+                 placeholder="Title, review text, contractor or listing"
+                 (keyup.enter)="applyFilters()" />
+        </div>
+        <div class="reviews-filters__actions">
+          <button type="button" class="btn btn--primary" (click)="applyFilters()">Filter</button>
+          <button type="button" class="btn btn--ghost" (click)="clearFilters()">Clear</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table reviews-table">
+          <thead>
+            <tr>
+              <th>Listing</th>
+              <th>Contractor</th>
+              <th>Supplier</th>
+              <th>Rating</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="loading">
+              <td class="text-center" colspan="8">Loading...</td>
+            </tr>
+            <tr *ngFor="let r of reviews">
+              <td class="cell-clip" [title]="r.listingTitle">{{ r.listingTitle }}</td>
+              <td class="cell-clip" [title]="r.reviewerDisplayName">{{ r.reviewerDisplayName }}</td>
+              <td class="cell-clip" [title]="r.supplierDisplayName">{{ r.supplierDisplayName }}</td>
+              <td class="cell-rating">{{ r.overallRating }} ★</td>
+              <td class="cell-clip" [title]="r.reviewText || r.title">{{ r.title }}</td>
+              <td>
+                <app-status-badge [status]="r.status || 'Published'"></app-status-badge>
+              </td>
+              <td class="cell-date">{{ r.createdAt | date:'dd MMM yyyy' }}</td>
+              <td class="col-actions">
+                <button type="button"
+                        class="btn btn--sm btn--danger-outline"
+                        *ngIf="r.status !== 'Deleted'"
+                        (click)="openDelete(r)">Remove</button>
+              </td>
+            </tr>
+            <tr *ngIf="!loading && reviews.length === 0">
+              <td class="text-center" colspan="8">No reviews found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <span>
+          Showing
+          {{ reviews.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }}
+          of {{ totalCount }} reviews
+        </span>
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button type="button" [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+          <button type="button" class="active">{{ page }}</button>
+          <button type="button" [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="page-layout__aside">
+    <div class="info-panel">
+      <h4>How this works</h4>
+      <ul>
+        <li>Reviews containing blocked language are automatically flagged and never published — check the Audit Log for "Review_Flagged_Profanity" entries.</li>
+        <li>Admins can remove any published review directly here; a reason is required and the supplier is notified.</li>
+        <li>Removing a review recalculates that listing's average rating immediately.</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<div class="modal-overlay" *ngIf="showDeleteModal && reviewToDelete" (click)="closeDelete()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Remove Review</h3>
+    <p>{{ reviewToDelete.listingTitle }} — {{ reviewToDelete.reviewerDisplayName }}</p>
+
+    <div class="alert alert--error" *ngIf="deleteError">{{ deleteError }}</div>
+
+    <div class="form-group">
+      <label>Reason <span class="required">*</span></label>
+      <textarea rows="3" [(ngModel)]="deleteReason"
+                placeholder="e.g. Contains vulgar language not caught by the blocked-term filter."></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn--ghost" (click)="closeDelete()">Cancel</button>
+      <button type="button" class="btn btn--danger" [disabled]="deleting" (click)="confirmDelete()">
+        {{ deleting ? 'Removing...' : 'Remove Review' }}
+      </button>
+    </div>
+  </div>
+</div>

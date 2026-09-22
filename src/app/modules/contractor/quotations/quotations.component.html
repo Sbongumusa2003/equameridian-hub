@@ -1,0 +1,78 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>My Quotation Requests</h1>
+    </div>
+    <div class="page-header__sub">
+      <app-context-help topic="contractor-quotations"></app-context-help>
+      <p>Track quotes you've requested from suppliers.</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button class="btn btn--outline" *ngIf="compareList.length > 1" (click)="goCompare()">
+    Compare ({{ compareList.length }})
+  </button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab" [class.active]="!status" (click)="setStatus(undefined)">All</button>
+  <button class="tab" [class.active]="status === 'Requested'" (click)="setStatus('Requested')">Pending</button>
+  <button class="tab" [class.active]="status === 'Submitted'" (click)="setStatus('Submitted')">Quoted</button>
+  <button class="tab" [class.active]="status === 'Accepted'" (click)="setStatus('Accepted')">Accepted</button>
+  <button class="tab" [class.active]="status === 'Rejected'" (click)="setStatus('Rejected')">Rejected</button>
+</div>
+
+<div class="filter-bar">
+  <input type="text" class="search-input" placeholder="Search quotations..."
+         [(ngModel)]="search" (keyup.enter)="load()" />
+  <button class="btn btn--outline btn--sm" (click)="load()">Search</button>
+</div>
+
+<div class="panel p-0" >
+  <div class="loading-state" *ngIf="loading">Loading quotations...</div>
+  <div class="empty-state" *ngIf="!loading && quotations.length === 0">
+    No quotation requests yet. Browse machinery to request your first quote.
+  </div>
+
+  <table class="data-table" *ngIf="!loading && quotations.length > 0">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Listing</th>
+        <th>Supplier</th>
+        <th>Requested</th>
+        <th>Valid Until</th>
+        <th>Est. Total</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let q of quotations">
+        <td>
+          <input type="checkbox" *ngIf="isComparable(q)"
+                 [checked]="isSelected(q.quotationID)" (change)="toggleCompare(q.quotationID)" />
+        </td>
+        <td><strong>{{ q.listingTitle }}</strong></td>
+        <td>{{ q.supplierName || '—' }}</td>
+        <td>{{ q.requestedDate | date:'mediumDate' }}</td>
+        <td>{{ q.quoteValidUntil ? (q.quoteValidUntil | date:'dd MMM yyyy HH:mm':'Africa/Johannesburg') : '—' }}<div class='text-muted' *ngIf='countdown(q)'>{{ countdown(q) }}</div></td>
+        <td>{{ q.estimatedTotal ? ('R ' + (q.estimatedTotal | number)) : '—' }}</td>
+        <td><app-status-badge [status]="q.status"></app-status-badge></td>
+        <td class="action-cell">
+          <a class="btn btn--sm btn--outline" [routerLink]="['/contractor/quotations', q.quotationID]">View</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer" *ngIf="!loading && quotations.length > 0">
+    <span>{{ totalCount }} quotation(s)</span>
+    <div class="pagination">
+      <button [disabled]="page === 1" (click)="goToPage(page - 1)">‹</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page === totalPages" (click)="goToPage(page + 1)">›</button>
+    </div>
+  </div>
+</div>

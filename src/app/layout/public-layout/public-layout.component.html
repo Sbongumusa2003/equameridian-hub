@@ -1,0 +1,81 @@
+<div class="public-shell">
+  <header class="public-header" [class.public-header--solid]="true">
+    <a routerLink="/" class="public-header__brand">
+      <img
+        class="brand-logo brand-logo--header"
+        src="assets/brand/logo-mark.png"
+        width="36"
+        height="36"
+        alt="EquaMeridian Holdings"
+      />
+      <span class="logo-text">
+        <span class="logo-text__name">EquaMeridian</span>
+        <span class="logo-text__hub">Hub</span>
+      </span>
+    </a>
+
+    <nav class="public-header__nav" aria-label="Primary">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/browse" routerLinkActive="is-active">Browse machinery</a>
+      <a href="#how-it-works" class="nav-anchor" *ngIf="isHome">How it works</a>
+    </nav>
+
+    <div class="public-header__actions">
+      <ng-container *ngIf="!auth.isLoggedIn; else loggedIn">
+        <a routerLink="/auth/login" class="btn-nav btn-nav--ghost">Log in</a>
+        <a routerLink="/auth/register" class="btn-nav btn-nav--solid">Register</a>
+      </ng-container>
+      <ng-template #loggedIn>
+        <button type="button" class="btn-nav btn-nav--solid" (click)="auth.redirectByRole()">
+          Go to dashboard
+        </button>
+      </ng-template>
+    </div>
+  </header>
+
+  <main id="main-content" tabindex="-1" class="public-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="public-footer">
+    <div class="public-footer__top">
+      <div class="public-footer__brand">
+        <div class="footer-brand" aria-label="EquaMeridian Holdings">
+          <img
+            class="brand-logo brand-logo--footer"
+            src="assets/brand/logo-mark.png"
+            width="40"
+            height="40"
+            alt=""
+          />
+          <div class="footer-brand__text">
+            <span class="footer-brand__name">EquaMeridian</span>
+            <span class="footer-brand__hub">Holdings</span>
+          </div>
+        </div>
+        <p>Equipment hire marketplace for contractors and suppliers across South Africa.</p>
+      </div>
+      <div class="public-footer__cols">
+        <div>
+          <h4>Platform</h4>
+          <a routerLink="/browse">Browse machinery</a>
+          <a routerLink="/auth/register">Register</a>
+          <a routerLink="/auth/login">Sign in</a>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <a routerLink="/policies/terms">Terms of Service</a>
+          <a routerLink="/policies/privacy">Privacy Policy</a>
+          <a routerLink="/policies/master-lease-agreement">Master Lease Agreement</a>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <a href="https://www.equameridianholdings.com/" target="_blank" rel="noopener noreferrer">EquaMeridian Holdings</a>
+        </div>
+      </div>
+    </div>
+    <div class="public-footer__bottom">
+      <span>&copy; {{ currentYear }} EquaMeridian Holdings. All rights reserved.</span>
+    </div>
+  </footer>
+</div>

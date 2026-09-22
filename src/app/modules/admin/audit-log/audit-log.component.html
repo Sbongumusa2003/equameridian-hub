@@ -1,0 +1,102 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Audit Log</h1>
+    </div>
+    <div class="page-header__sub">
+      <app-context-help topic="audit-log"></app-context-help>
+      <p>Search and export system activity across the platform</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <div class="action-cell">
+    <button class="btn btn--outline" [disabled]="exporting" (click)="exportCsv()">Export CSV</button>
+    <button class="btn btn--outline" [disabled]="exporting" (click)="exportPdf()">Export PDF</button>
+  </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <input type="text" placeholder="Search description..."
+           class="search-input" (input)="onSearch($any($event.target).value)" />
+    <select [(ngModel)]="eventTypeFilter" (change)="applyFilters()">
+      <option value="">All Event Types</option>
+      <option *ngFor="let t of eventTypes" [value]="t">{{ t }}</option>
+    </select>
+    <select [(ngModel)]="userFilter" (change)="applyFilters()">
+      <option [ngValue]="null">All Users</option>
+      <option *ngFor="let u of users" [ngValue]="u.userID">{{ u.fullName }}</option>
+    </select>
+  </div>
+  <div class="filter-bar">
+ <div class="form-group mb-0 flex-1" >
+      <label>From</label>
+      <input type="date" [(ngModel)]="fromDate" (change)="applyFilters()" />
+    </div>
+ <div class="form-group mb-0 flex-1" >
+      <label>To</label>
+      <input type="date" [(ngModel)]="toDate" (change)="applyFilters()" />
+    </div>
+ <button class="btn btn--ghost mt-20" (click)="clearFilters()">Clear Filters</button>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>EVENT</th><th>DESCRIPTION</th><th>USER</th>
+        <th>DATE</th><th>TIME</th><th>STATUS</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="7" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let log of logs">
+        <td><strong>{{ log.eventType | titlecase }}</strong></td>
+        <td><small>{{ log.description }}</small></td>
+        <td>{{ log.userName || 'System' }}</td>
+        <td>{{ log.eventDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td>{{ log.eventTime }}</td>
+        <td><app-status-badge [status]="log.status" [showDot]="false"></app-status-badge></td>
+        <td><button class="btn btn--sm btn--outline" (click)="viewDetail(log)">Details</button></td>
+      </tr>
+      <tr *ngIf="!loading && logs.length === 0">
+        <td colspan="7" class="text-center">No audit events found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Showing {{ logs.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }} events</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showDetailModal && selected" (click)="closeDetail()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ selected.eventType | titlecase }}</h3>
+    <p>Audit #{{ selected.auditID }}</p>
+
+    <div class="info-row"><span>Description</span><strong>{{ selected.description }}</strong></div>
+    <div class="info-row"><span>User</span><strong>{{ selected.userName || 'System' }}</strong></div>
+    <div class="info-row" *ngIf="selected.userEmail"><span>Email</span><strong>{{ selected.userEmail }}</strong></div>
+    <div class="info-row"><span>Date &amp; Time</span><strong>{{ selected.eventDate | date:'dd MMM yyyy':'Africa/Johannesburg' }} · {{ selected.eventTime }}</strong></div>
+    <div class="info-row"><span>Status</span><app-status-badge [status]="selected.status" [showDot]="false"></app-status-badge></div>
+    <div class="info-row" *ngIf="selected.ipAddress"><span>IP Address</span><strong>{{ selected.ipAddress }}</strong></div>
+    <div class="info-row" *ngIf="selected.listingID"><span>Listing ID</span><strong>{{ selected.listingID }}</strong></div>
+
+ <div class="form-section mt-16" *ngIf="selected.previousValues" >
+      <h4>Previous Values</h4>
+ <p class="text-muted text-break" >{{ selected.previousValues }}</p>
+    </div>
+    <div class="form-section" *ngIf="selected.newValues">
+      <h4>New Values</h4>
+ <p class="text-muted text-break" >{{ selected.newValues }}</p>
+    </div>
+
+ <button class="btn btn--ghost btn--full mt-16" (click)="closeDetail()">Close</button>
+  </div>
+</div>

@@ -1,0 +1,11 @@
+.linkish {
+  background: none;
+  border: 0;
+  color: var(--primary, #c45c26);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+}
+.linkish:hover { text-decoration: underline; }
+.text-right { text-align: right; }

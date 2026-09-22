@@ -1,0 +1,226 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Platform Fees</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="platform-fees"></app-context-help>
+    <p>Configure commission, fee limits, and hire-duration discount tiers</p>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading fee configuration...</div>
+
+<div class="page-layout" *ngIf="!loading">
+  <div class="page-layout__main">
+    <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+    <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
+
+    <div class="form-panel">
+      <div class="form-section">
+        <h4>Commission</h4>
+        <div class="form-group">
+          <label>Commission Rate (%)</label>
+          <input type="number" min="0" max="100" step="0.1" [(ngModel)]="form.commissionRate" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Minimum Fee (R)</label>
+            <input type="number" min="0" step="0.01" [(ngModel)]="form.minFee" />
+          </div>
+          <div class="form-group">
+            <label>Maximum Fee (R)</label>
+            <input type="number" min="0" step="0.01" [(ngModel)]="form.maxFee" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>VAT</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>VAT Rate (%)</label>
+            <input type="number" min="0" max="30" step="0.1" [(ngModel)]="form.vatRate" />
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" class="w-auto mr-8" [(ngModel)]="form.vatInclusive" />
+              Fees are VAT inclusive
+            </label>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="form-section">
+        <h4>Delivery pricing</h4>
+        <p class="section-sub" style="margin: 0 0 1rem; color: #666; font-size: 0.9rem;">
+          Used when the contractor chooses supplier delivery. Contractor pickup is always R0.
+          Distance is estimated from the listing location to the delivery address (SA city lookup).
+          Within the free radius the contractor pays only the base fee; beyond that,
+          extra kilometres × rate per km are added.
+        </p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Base fee (R)</label>
+            <input type="number" min="0" step="1" [(ngModel)]="form.deliveryBaseFee" />
+          </div>
+          <div class="form-group">
+            <label>Free radius (km)</label>
+            <input type="number" min="0" step="1" [(ngModel)]="form.deliveryFreeRadiusKm" />
+          </div>
+          <div class="form-group">
+            <label>Rate per extra km (R)</label>
+            <input type="number" min="0" step="0.5" [(ngModel)]="form.deliveryRatePerKm" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--primary" [disabled]="saving" (click)="save()">
+          {{ saving ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Duration discount tiers -->
+    <div class="form-panel" style="margin-top: 1.5rem;">
+      <div class="form-section">
+        <h4>Hire-duration discount tiers</h4>
+        <p class="section-sub" style="margin: 0 0 1rem; color: #666; font-size: 0.9rem;">
+          Longer hires can receive a percentage discount. Leave max days empty for an open-ended top tier (e.g. 30+ days).
+        </p>
+
+        <div class="alert alert--error" *ngIf="tierError">{{ tierError }}</div>
+        <div class="alert alert--success" *ngIf="tierSuccess">{{ tierSuccess }}</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category (optional)</label>
+            <select [(ngModel)]="tierForm.categoryID">
+              <option [ngValue]="null">All categories</option>
+              <option *ngFor="let c of categories" [ngValue]="c.categoryID">{{ c.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Min days *</label>
+            <input type="number" min="1" step="1" [(ngModel)]="tierForm.minDays" />
+          </div>
+          <div class="form-group">
+            <label>Max days</label>
+            <input type="number" min="1" step="1" [(ngModel)]="tierForm.maxDays" placeholder="Open-ended" />
+          </div>
+          <div class="form-group">
+            <label>Discount % *</label>
+            <input type="number" min="0" max="100" step="0.1" [(ngModel)]="tierForm.discountPercent" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn--primary" [disabled]="tierSaving" (click)="saveTier()">
+            {{ tierSaving ? 'Saving…' : (editingTierId ? 'Update tier' : 'Add tier') }}
+          </button>
+          <button type="button" class="btn btn--ghost" *ngIf="editingTierId" (click)="resetTierForm()">Cancel</button>
+        </div>
+      </div>
+
+      <div class="loading-state" *ngIf="tiersLoading">Loading tiers…</div>
+      <div class="report-table-wrap" *ngIf="!tiersLoading">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Duration</th>
+              <th>Discount</th>
+              <th>Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of tiers">
+              <td>{{ t.categoryName || 'All categories' }}</td>
+              <td>{{ daysLabel(t) }}</td>
+              <td>{{ t.discountPercent }}%</td>
+              <td>{{ t.updatedAt | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+              <td class="table-actions">
+                <button type="button" class="btn btn--sm btn--ghost" (click)="editTier(t)">Edit</button>
+                <button type="button" class="btn btn--sm btn--ghost" (click)="deleteTier(t)">Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="tiers.length === 0">
+              <td colspan="5" class="text-center">No discount tiers configured yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Equipment categories -->
+    <div class="form-panel" style="margin-top: 1.5rem;">
+      <div class="form-section">
+        <h4>Equipment categories</h4>
+        <p class="section-sub" style="margin: 0 0 1rem; color: #666; font-size: 0.9rem;">
+          Categories used across listings and discount tiers. A category can only be deleted while
+          nothing (no listings, no category-specific discount tiers) still references it.
+        </p>
+
+        <div class="alert alert--error" *ngIf="categoryError">{{ categoryError }}</div>
+        <div class="alert alert--success" *ngIf="categorySuccess">{{ categorySuccess }}</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" [(ngModel)]="categoryForm.name" placeholder="e.g. Excavators" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn--primary" [disabled]="categorySaving" (click)="saveCategory()">
+            {{ categorySaving ? 'Saving…' : (editingCategoryId ? 'Update category' : 'Add category') }}
+          </button>
+          <button type="button" class="btn btn--ghost" *ngIf="editingCategoryId" (click)="resetCategoryForm()">Cancel</button>
+        </div>
+      </div>
+
+      <div class="loading-state" *ngIf="categoriesLoading">Loading categories…</div>
+      <div class="report-table-wrap" *ngIf="!categoriesLoading">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Listings using it</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of categoriesAdmin">
+              <td>{{ c.name }}</td>
+              <td>{{ c.listingCount }}</td>
+              <td class="table-actions">
+                <button type="button" class="btn btn--sm btn--ghost" (click)="editCategory(c)">Edit</button>
+                <button type="button" class="btn btn--sm btn--ghost" [disabled]="!!c.listingCount" [title]="c.listingCount ? 'Reassign or remove those listings first' : ''" (click)="deleteCategory(c)">Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="categoriesAdmin.length === 0">
+              <td colspan="3" class="text-center">No categories yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel" *ngIf="config">
+      <h4>Last Updated</h4>
+      <div class="info-row"><span>By</span><strong>{{ config.updatedByAdminName || '—' }}</strong></div>
+      <div class="info-row"><span>When</span><strong>{{ config.updatedAt | date:'d MMM yyyy · HH:mm' }}</strong></div>
+    </div>
+    <div class="info-panel">
+      <h4>Notes</h4>
+      <ul>
+        <li>Changes take effect for new bookings immediately.</li>
+        <li>The minimum fee applies when the commission calculation falls below it.</li>
+        <li>The maximum fee caps the commission on high-value bookings.</li>
+        <li>Discount tiers reduce the hire price by duration; they stack with platform commission on the resulting amount.</li>
+      </ul>
+    </div>
+  </div>
+</div>

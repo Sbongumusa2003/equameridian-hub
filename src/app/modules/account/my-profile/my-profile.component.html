@@ -1,0 +1,225 @@
+<div class="page-layout">
+  <div class="page-layout__main">
+    <h2>My Profile</h2>
+    <app-context-help topic="my-profile"></app-context-help>
+    <p>View and update your account information.</p>
+
+    <div class="loading-state" *ngIf="loading">Loading profile...</div>
+
+    <div class="alert alert--error" *ngIf="error && !loading">{{ error }}</div>
+
+    <div class="profile-card" *ngIf="!loading && profile">
+      <div class="profile-card__header">
+        <div class="avatar avatar--lg">{{ initials }}</div>
+        <div>
+          <strong>{{ profile.fullName }}</strong>
+          <br>
+          <small>{{ profile.role }}</small>
+          <app-status-badge [status]="profile.accountStatus"></app-status-badge>
+        </div>
+ <button class="btn btn--outline btn--sm ml-auto" 
+                (click)="activeTab = 'personal'">Edit Profile</button>
+      </div>
+
+      <div class="profile-tabs">
+        <button class="tab" [class.active]="activeTab === 'personal'" (click)="activeTab = 'personal'">Personal Details</button>
+        <button class="tab" [class.active]="activeTab === 'company'"  (click)="activeTab = 'company'">Company</button>
+        <button class="tab" [class.active]="activeTab === 'areas'"    (click)="activeTab = 'areas'">Service Areas</button>
+        <button class="tab" [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">Security</button>
+      </div>
+
+      <form [formGroup]="form" *ngIf="activeTab === 'personal' || activeTab === 'company'">
+        <div class="form-section" *ngIf="activeTab === 'personal'">
+          <h4>Personal Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full name *</label>
+              <input type="text" formControlName="fullName"
+                     [class.is-invalid]="form.get('fullName')?.touched && form.get('fullName')?.invalid" />
+              <div class="field-error" *ngIf="form.get('fullName')?.touched && form.get('fullName')?.errors?.['required']">
+                Full name is required.
+              </div>
+              <div class="field-error" *ngIf="form.get('fullName')?.touched && form.get('fullName')?.errors?.['maxlength']">
+                Full name is too long.
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email address *</label>
+              <input type="email" formControlName="email"
+                     [class.is-invalid]="form.get('email')?.touched && form.get('email')?.invalid" />
+              <div class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.errors?.['required']">
+                Email is required.
+              </div>
+              <div class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.errors?.['email']">
+                Please enter a valid email address.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section" *ngIf="activeTab === 'company'">
+          <div class="form-section" *ngIf="(profile.role || '').toLowerCase() === 'supplier'" style="margin-bottom:16px">
+            <h4>EFT account details</h4>
+            <p class="text-muted">Shown to contractors when an invoice is above the card limit (R50 000). They pay you directly and upload proof.</p>
+            <div class="form-row">
+              <div class="form-group"><label>Bank</label>
+                <select formControlName="bankName">
+                  <option value="">Select bank</option>
+                  <option *ngFor="let b of saBanks" [value]="b">{{ b }}</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Account name</label><input type="text" formControlName="bankAccountName" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Account number</label><input type="text" formControlName="bankAccountNumber" /></div>
+              <div class="form-group"><label>Branch code</label><input type="text" formControlName="bankBranchCode" /></div>
+            </div>
+            <div class="form-group"><label>Account type</label>
+              <select formControlName="bankAccountType">
+                <option>Cheque</option><option>Savings</option><option>Transmission</option>
+              </select>
+            </div>
+          </div>
+
+          <h4>Company Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Company name</label>
+              <input type="text" formControlName="companyName" />
+            </div>
+            <div class="form-group">
+              <label>Registration number</label>
+              <input type="text" formControlName="registrationNumber"
+                     [class.is-invalid]="form.get('registrationNumber')?.touched && form.get('registrationNumber')?.invalid" />
+              <div class="field-error" *ngIf="form.get('registrationNumber')?.touched && form.get('registrationNumber')?.errors?.['maxlength']">
+                Registration number is too long.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert--error"   *ngIf="error">{{ error }}</div>
+        <div class="alert alert--success" *ngIf="saved">✓ Changes saved successfully!</div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" (click)="cancel()">Cancel</button>
+          <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving">
+            {{ saving ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </form>
+
+      <div *ngIf="activeTab === 'areas'" class="py-20">
+        <div class="form-section">
+          <h4>Service Areas</h4>
+          <p class="text-muted-color mb-12">
+            Select the regions your company operates in. This helps contractors find equipment near them.
+          </p>
+
+          <div class="checkbox-grid">
+            <label class="checkbox-option" *ngFor="let area of serviceAreas">
+              <input type="checkbox"
+                     [checked]="isServiceAreaSelected(area.serviceAreaID)"
+                     (change)="toggleServiceArea(area.serviceAreaID)" />
+              {{ area.name }}
+            </label>
+          </div>
+
+          <div class="alert alert--error"   *ngIf="error">{{ error }}</div>
+          <div class="alert alert--success" *ngIf="saved">✓ Changes saved successfully!</div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn--ghost" (click)="cancel()">Cancel</button>
+            <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving">
+              {{ saving ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab === 'security'" class="py-20">
+        <div class="form-section">
+          <h4>Two-Factor Authentication</h4>
+          <p class="text-muted-color mb-12">
+            When enabled, you'll be asked for a one-time code sent to you every time you sign in,
+            in addition to your password.
+          </p>
+
+          <div class="alert alert--success" *ngIf="twoFactorMessage">{{ twoFactorMessage }}</div>
+
+          <div class="flex flex-center gap-16">
+            <strong>Status:</strong>
+            <span>{{ profile.twoFactorEnabled ? 'Enabled' : 'Disabled' }}</span>
+          </div>
+
+          <div class="mt-12" *ngIf="!showTwoFactorConfirm">
+            <button class="btn btn--outline btn--sm" (click)="openTwoFactorConfirm()">
+              {{ profile.twoFactorEnabled ? 'Disable Two-Factor Authentication' : 'Enable Two-Factor Authentication' }}
+            </button>
+          </div>
+
+          <div class="mt-12" style="max-width:360px;" *ngIf="showTwoFactorConfirm">
+            <div class="form-group">
+              <label>Confirm your password *</label>
+              <input type="password" [(ngModel)]="twoFactorPassword" [ngModelOptions]="{standalone: true}"
+                     placeholder="••••••••" />
+            </div>
+            <div class="alert alert--error" *ngIf="twoFactorError">{{ twoFactorError }}</div>
+            <div class="flex gap-8">
+              <button class="btn btn--ghost btn--sm" (click)="cancelTwoFactorConfirm()">Cancel</button>
+              <button class="btn btn--primary btn--sm" (click)="confirmToggleTwoFactor()" [disabled]="twoFactorSaving">
+                {{ twoFactorSaving ? 'Saving...' : (profile.twoFactorEnabled ? 'Disable' : 'Enable') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-layout__aside" *ngIf="!loading && profile">
+    <div class="info-panel">
+      <h4>Account Status</h4>
+      <div class="info-row">
+        <span>Role</span>
+        <strong>{{ profile.role }}</strong>
+      </div>
+      <div class="info-row">
+        <span>Status</span>
+        <app-status-badge [status]="profile.accountStatus" [showDot]="false"></app-status-badge>
+      </div>
+      <div class="info-row">
+        <span>Member since</span>
+        <strong>{{ profile.createdDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong>
+      </div>
+      <div class="info-row" *ngIf="profile.lastLoginDate">
+        <span>Last login</span>
+        <strong>{{ profile.lastLoginDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong>
+      </div>
+    </div>
+
+ <div class="info-panel info-panel--danger mt-16" >
+      <h4>Danger Zone</h4>
+      <p>Deactivating your account removes you from the platform.</p>
+
+      <div *ngIf="!showDeactivateConfirm">
+        <button class="btn btn--danger-outline btn--sm" (click)="openDeactivate()">
+          Deactivate Account
+        </button>
+      </div>
+
+      <div *ngIf="showDeactivateConfirm">
+        <div class="alert alert--error mb-12">
+          Are you sure? This will remove your account from the platform.
+        </div>
+        <div class="alert alert--error" *ngIf="deactivateError">{{ deactivateError }}</div>
+        <div class="flex gap-8">
+          <button class="btn btn--ghost btn--sm" (click)="showDeactivateConfirm = false">Cancel</button>
+          <button class="btn btn--danger btn--sm" (click)="confirmDeactivate()" [disabled]="deactivating">
+            {{ deactivating ? 'Deactivating...' : 'Yes, Deactivate' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

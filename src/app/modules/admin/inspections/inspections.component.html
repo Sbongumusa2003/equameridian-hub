@@ -1,0 +1,129 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Inspections</h1>
+    </div>
+    <div class="page-header__sub">
+      <p>Schedule and track machinery inspections</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button class="btn btn--primary" (click)="openRequestModal()">+ Request Inspection</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <select [(ngModel)]="statusFilter" (change)="setStatus(statusFilter)">
+      <option value="">All Statuses</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+    </select>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>MACHINERY</th><th>SUPPLIER</th><th>SCHEDULED DATE</th>
+        <th>STATUS</th><th>OUTCOME</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="6" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let i of inspections">
+        <td><strong>{{ i.machineryTitle }}</strong></td>
+        <td>{{ i.supplierName }}</td>
+        <td>{{ i.scheduledDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td><app-status-badge [status]="i.status"></app-status-badge></td>
+        <td>{{ i.outcome || '—' }}</td>
+        <td><button class="btn btn--sm btn--outline" (click)="viewDetail(i)">View</button></td>
+      </tr>
+      <tr *ngIf="!loading && inspections.length === 0">
+        <td colspan="6" class="text-center">No inspections found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Showing {{ inspections.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }} inspections</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" *ngIf="showDetailModal && selected" (click)="closeDetail()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ selected.machineryTitle }}</h3>
+    <p>Inspection #{{ selected.inspectionID }}</p>
+    <div class="info-row"><span>Supplier</span><strong>{{ selected.supplierName }}</strong></div>
+    <div class="info-row"><span>Scheduled Date</span><strong>{{ selected.scheduledDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+    <div class="info-row"><span>Status</span><app-status-badge [status]="selected.status"></app-status-badge></div>
+    <div class="info-row" *ngIf="selected.outcome"><span>Outcome</span><strong>{{ selected.outcome }}</strong></div>
+    <div class="info-row" *ngIf="selected.notes"><span>Notes</span><strong>{{ selected.notes }}</strong></div>
+
+    <!-- Req: admin can confirm the outcome of any inspection still in 'Requested' status. -->
+    <ng-container *ngIf="selected.status === 'Requested'">
+      <hr class="mt-16" />
+      <h4 class="mt-16">Confirm Outcome</h4>
+
+      <div class="alert alert--error" *ngIf="confirmError">{{ confirmError }}</div>
+
+      <div class="form-group">
+        <label>Outcome</label>
+        <select [(ngModel)]="outcomeForm.outcome">
+          <option value="">Select outcome...</option>
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea rows="3" [(ngModel)]="outcomeForm.notes" placeholder="Optional notes about the inspection..."></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--ghost" (click)="closeDetail()">Cancel</button>
+        <button class="btn btn--primary" [disabled]="confirming" (click)="confirmOutcome()">
+          {{ confirming ? 'Confirming...' : 'Confirm Outcome' }}
+        </button>
+      </div>
+    </ng-container>
+
+    <button class="btn btn--ghost btn--full mt-16" *ngIf="selected.status !== 'Requested'" (click)="closeDetail()">Close</button>
+  </div>
+</div>
+
+<!-- Request Modal -->
+<div class="modal-overlay" *ngIf="showRequestModal" (click)="closeRequestModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Request Inspection</h3>
+    <p>Schedule a new inspection for a machinery listing</p>
+
+    <div class="alert alert--error" *ngIf="requestError">{{ requestError }}</div>
+
+    <div class="form-group">
+      <label>Machinery Listing</label>
+      <select [(ngModel)]="requestForm.listingID">
+        <option [ngValue]="0">Select machinery...</option>
+        <option *ngFor="let m of machineryOptions" [ngValue]="m.listingID">
+          {{ m.machineryTitle }} — {{ m.company }} ({{ m.status }})
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Scheduled Date</label>
+      <input type="date" [(ngModel)]="requestForm.scheduledDate" />
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn--ghost" (click)="closeRequestModal()">Cancel</button>
+      <button class="btn btn--primary" [disabled]="requesting" (click)="submitRequest()">
+        {{ requesting ? 'Requesting...' : 'Request Inspection' }}
+      </button>
+    </div>
+  </div>
+</div>

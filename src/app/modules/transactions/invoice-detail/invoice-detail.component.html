@@ -1,0 +1,126 @@
+<div class="breadcrumb">
+  <a routerLink="/transactions/invoices">Invoices</a>
+  <span>›</span>
+  <span>{{ invoice?.invoiceNumber ?? 'Invoice' }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading invoice...</div>
+<div class="empty-state" *ngIf="!loading && !invoice">Invoice not found.</div>
+
+<div class="page-layout" *ngIf="!loading && invoice">
+  <div class="page-layout__main">
+    <div class="panel">
+      <div class="listing-card__header">
+        <h3 class="detail-title">Invoice {{ invoice.invoiceNumber }}</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <app-status-badge [status]="invoice.paymentStatus"></app-status-badge>
+          <button type="button" class="btn btn--sm btn--outline" (click)="downloadPdf()">Download PDF</button>
+        </div>
+      </div>
+      <div id="invoicePrintRoot">
+      <p class="text-muted">{{ invoice.listingTitle }}</p>
+
+ <div class="info-grid mt-20" >
+        <div><small>Contractor</small><span>{{ invoice.contractorName }}</span></div>
+        <div><small>Supplier</small><span>{{ invoice.supplierName }}</span></div>
+        <div><small>Currency</small><span>{{ invoice.currency }}</span></div>
+      </div>
+
+      <div class="info-row"><span>Invoice Date</span><strong>{{ invoice.invoiceDate | date:'mediumDate' }}</strong></div>
+      <div class="info-row"><span>Due Date</span><strong>{{ invoice.dueDate | date:'mediumDate' }}</strong></div>
+      <div class="info-row"><span>Status</span><strong>{{ invoice.status }}</strong></div>
+      <div class="info-row"><span>Payment method</span><strong>{{ invoice.paymentMethod || (invoice.totalAmount > 50000 ? 'EFT' : 'PayFast') }}</strong></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__title">Amount Breakdown</div>
+      <div class="info-row"><span>Rental Subtotal</span><strong>R {{ invoice.subtotal | number:'1.2-2' }}</strong></div>
+      <div class="info-row" *ngIf="invoice.discountAmount"><span>Discount</span><strong>-R {{ invoice.discountAmount | number:'1.2-2' }}</strong></div>
+      <div class="info-row"><span>Delivery Fee</span><strong>R {{ invoice.deliveryFee | number:'1.2-2' }}</strong></div>
+      <div class="info-row"><span>VAT ({{ invoice.vatRate }}%)</span><strong>R {{ invoice.vatAmount | number:'1.2-2' }}</strong></div>
+      <div class="info-row"><span>Total Amount</span><strong>R {{ invoice.totalAmount | number:'1.2-2' }}</strong></div>
+      <ng-container *ngIf="!isContractor">
+        <div class="info-row"><span>Platform Fee ({{ invoice.platformFeePercentage }}%)</span><strong>R {{ invoice.platformFeeAmount | number }}</strong></div>
+        <div class="info-row"><span>Supplier Payable Amount</span><strong>R {{ invoice.supplierPayableAmount | number }}</strong></div>
+      </ng-container>
+    </div>
+  </div>
+
+      </div>
+  <div class="page-layout__aside">
+    <div class="info-panel" *ngIf="isContractor">
+      <h4>Payment</h4>
+      <div class="alert alert--error" *ngIf="payError">
+        {{ payError }}
+        <a *ngIf="payErrorLeaseId" [routerLink]="['/transactions/lease-agreements', payErrorLeaseId]" class="d-block mt-4">
+          Go to lease agreement &rarr;
+        </a>
+      </div>
+
+      <div class="eft-box" *ngIf="eft">
+        <h5>Pay by EFT</h5>
+        <p class="text-muted">Card checkout is not available above R {{ eft.gatewayMaxAmount | number }}. Transfer the amount to the supplier and upload proof.</p>
+        <div class="info-row"><span>Amount</span><strong>R {{ eft.amount | number:'1.2-2' }}</strong></div>
+        <div class="info-row"><span>Reference</span><strong>{{ eft.reference }}</strong></div>
+        <div class="info-row"><span>Bank</span><strong>{{ eft.bank?.bankName || '—' }}</strong></div>
+        <div class="info-row"><span>Account name</span><strong>{{ eft.bank?.accountName || '—' }}</strong></div>
+        <div class="info-row"><span>Account number</span><strong>{{ eft.bank?.accountNumber || 'Not provided yet' }}</strong></div>
+        <div class="info-row"><span>Branch</span><strong>{{ eft.bank?.branchCode || '—' }}</strong></div>
+        <div class="info-row"><span>Type</span><strong>{{ eft.bank?.accountType || '—' }}</strong></div>
+        <p class="text-muted fs-12" *ngIf="!eft.bankConfigured">The supplier has not captured bank details yet. Ask them to add an account under My Profile → Company.</p>
+        <label class="btn btn--outline w-full mt-8">
+          Upload proof of payment
+          <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" (change)="onProofSelected($event)" />
+        </label>
+        <p class="text-muted fs-12" *ngIf="proofName">Selected: {{ proofName }}</p>
+      </div>
+      <button *ngIf="!isPaid && !eft" class="btn btn--primary w-full" [disabled]="paying" (click)="payNow()">
+        {{ paying ? 'Starting checkout...' : 'Pay Now' }}
+      </button>
+      <button *ngIf="!isPaid && !eft" class="btn btn--ghost w-full mt-8" [disabled]="paying" (click)="payNow()">
+        Check if EFT applies
+      </button>
+
+      <button *ngIf="isPaid" class="btn btn--outline w-full mt-8" (click)="viewReceipt()" [disabled]="loadingReceipt">
+        {{ loadingReceipt ? 'Loading...' : 'View Receipt' }}
+      </button>
+ <div class="alert alert--error mt-8" *ngIf="receiptError" >{{ receiptError }}</div>
+
+      <p class="text-muted mt-12 fs-12" *ngIf="!isPaid">
+        After paying, this status updates automatically once our payment provider confirms the
+        transaction — usually within a few minutes. There's no manual "check now" for this step;
+        simply refresh the page later to see the update.
+      </p>
+    </div>
+
+    <div class="info-panel" *ngIf="receipt">
+      <div class="listing-card__header">
+        <h4>Receipt</h4>
+        <button class="btn btn--sm btn--outline" (click)="closeReceipt()">Close</button>
+      </div>
+      <div class="info-row"><span>Invoice</span><strong>{{ receipt.invoiceNumber }}</strong></div>
+      <div class="info-row"><span>Amount</span><strong>R {{ receipt.amount | number }}</strong></div>
+      <div class="info-row"><span>VAT</span><strong>R {{ receipt.vatAmount | number }}</strong></div>
+      <div class="info-row"><span>Date</span><strong>{{ receipt.transactionDate | date:'medium' }}</strong></div>
+      <div class="info-row"><span>Status</span><strong>{{ receipt.paymentStatus }}</strong></div>
+      <div class="info-row"><span>Supplier</span><strong>{{ receipt.supplierName }}</strong></div>
+      <div class="info-row"><span>Contractor</span><strong>{{ receipt.contractorName }}</strong></div>
+    </div>
+
+    <div class="info-panel" *ngIf="auth.role === 'supplier' || invoice.hasEftProof">
+      <h4>EFT proof</h4>
+      <p class="text-muted" *ngIf="invoice.hasEftProof">{{ invoice.eftProofFileName }}</p>
+      <button class="btn btn--outline w-full" *ngIf="invoice.hasEftProof" (click)="downloadProof()">Download proof of payment</button>
+      <button class="btn btn--primary w-full mt-8" *ngIf="auth.role === 'supplier' && invoice.hasEftProof && !isPaid"
+              [disabled]="confirmingEft" (click)="confirmEft()">
+        {{ confirmingEft ? 'Saving...' : 'Confirm EFT received' }}
+      </button>
+    </div>
+
+    <div class="info-panel">
+      <h4>Related</h4>
+      <a class="quick-action" routerLink="/transactions/bookings">View Bookings</a>
+      <a class="quick-action" routerLink="/transactions/lease-agreements">View Lease Agreements</a>
+    </div>
+  </div>
+</div>

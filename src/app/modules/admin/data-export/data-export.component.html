@@ -1,0 +1,58 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Data Export</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Download raw platform data for external reporting or backup</p>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+<div class="alert alert--success" *ngIf="success">{{ success }}</div>
+
+<div class="panel mb-20">
+  <h3 class="panel__title">Export justification (required)</h3>
+  <p class="text-muted">
+    Under POPIA accountability rules, every export must record why the data is being downloaded.
+  </p>
+  <div class="reason-row">
+    <label class="field">
+      <span class="field__label">Business reason</span>
+      <select class="field__control" [(ngModel)]="reason">
+        <option *ngFor="let opt of reasonOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+      </select>
+    </label>
+    <label class="field" *ngIf="reason === 'Other'">
+      <span class="field__label">Details</span>
+      <input class="field__control" type="text" [(ngModel)]="reasonDetails" placeholder="Describe why you need this export" />
+    </label>
+  </div>
+</div>
+
+<div class="content-row">
+  <div class="panel panel--grow">
+    <h3 class="panel__title">Listings</h3>
+    <p class="text-muted">Export every listing on the platform, including supplier and category details.</p>
+    <div class="flex gap-10 mt-16">
+      <button class="btn btn--outline" [disabled]="exportingListings" (click)="exportListings('json')">
+        {{ exportingListings ? 'Exporting...' : 'Export as JSON' }}
+      </button>
+      <button class="btn btn--outline" [disabled]="exportingListings" (click)="exportListings('xml')">
+        {{ exportingListings ? 'Exporting...' : 'Export as XML' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="panel panel--grow">
+    <h3 class="panel__title">Bookings</h3>
+    <p class="text-muted">Export every booking record, including delivery and rental period details.</p>
+    <div class="flex gap-10 mt-16">
+      <button class="btn btn--outline" [disabled]="exportingBookings" (click)="exportBookings('json')">
+        {{ exportingBookings ? 'Exporting...' : 'Export as JSON' }}
+      </button>
+      <button class="btn btn--outline" [disabled]="exportingBookings" (click)="exportBookings('xml')">
+        {{ exportingBookings ? 'Exporting...' : 'Export as XML' }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,147 @@
+<div class="cart-page">
+  <div class="page-header">
+  <div class="page-header__title">
+    <h1>Shopping Cart</h1>
+  </div>
+  <div class="page-header__sub">
+    <p *ngIf="cart && cart.itemCount > 0">{{ cart.itemCount }} item{{ cart.itemCount === 1 ? '' : 's' }} · Review quantities and checkout securely</p>
+    <p *ngIf="!cart || cart.itemCount === 0">Add equipment from the marketplace to get started</p>
+  </div>
+</div>
+
+  <div class="checkout-steps" *ngIf="cart && cart.itemCount > 0 && !checkoutResults">
+    <div class="checkout-step checkout-step--active"><span class="step-num">1</span> Cart</div>
+    <div class="checkout-step-line"></div>
+    <div class="checkout-step"><span class="step-num">2</span> Checkout</div>
+    <div class="checkout-step-line"></div>
+    <div class="checkout-step"><span class="step-num">3</span> Lease &amp; pay</div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+  <div class="alert alert--warning" *ngIf="cart?.hasUnavailableItems">
+    Some items are no longer available at the selected quantity. Update or remove them before checkout.
+  </div>
+
+  <div class="panel order-confirmation" *ngIf="checkoutResults">
+    <div class="order-confirmation__icon">✅</div>
+    <h2>Order confirmed</h2>
+    <p class="text-muted">Your booking{{ checkoutResults.length === 1 ? '' : 's' }} {{ checkoutResults.length === 1 ? 'has' : 'have' }} been created. Sign the lease agreement and pay the invoice to proceed.</p>
+    <div class="cart-line cart-line--confirm" *ngFor="let booking of checkoutResults">
+      <div class="cart-line__main">
+        <div class="cart-line__title">{{ booking.listingTitle }}</div>
+        <div class="cart-line__meta text-muted">Booking #{{ booking.bookingID }} · Invoice {{ booking.invoiceNumber }}</div>
+      </div>
+      <div class="cart-line__price">
+        <div class="cart-line__now">R {{ booking.totalAmount | number:'1.2-2' }}</div>
+      </div>
+      <button type="button" class="btn btn--sm btn--primary" (click)="goToLease(booking.leaseAgreementID)">View lease &amp; pay</button>
+    </div>
+    <a routerLink="/contractor/browse" class="btn btn--outline mt-16">Continue browsing</a>
+  </div>
+
+  <div class="loading-state" *ngIf="loading && !checkoutResults">Loading cart…</div>
+
+  <div class="empty-cart" *ngIf="!loading && !checkoutResults && (!cart || cart.itemCount === 0)">
+    <div class="empty-cart__icon">🛒</div>
+    <h2>Your cart is empty</h2>
+    <p class="text-muted">Browse available machinery and add fixed-rate listings to book immediately.</p>
+    <a routerLink="/contractor/browse" class="btn btn--primary mt-16">Browse machinery</a>
+  </div>
+
+  <div class="checkout-layout" *ngIf="!loading && !checkoutResults && cart && cart.itemCount > 0">
+    <div class="checkout-main">
+      <div class="panel cart-group" *ngFor="let group of cart.supplierGroups">
+        <div class="panel__title">{{ group.supplierCompany }}</div>
+        <div class="cart-line" *ngFor="let item of group.items" [class.cart-line--unavailable]="!item.isAvailable">
+          <div class="cart-line__thumb">
+            <img *ngIf="item.imageUrl" [src]="resolveUrl(item.imageUrl)" [alt]="item.listingTitle" loading="lazy" />
+            <span class="cart-line__thumb-icon" *ngIf="!item.imageUrl">🏗️</span>
+          </div>
+          <div class="cart-line__main">
+            <div class="cart-line__title">{{ item.listingTitle }}</div>
+            <div class="cart-line__meta text-muted">
+              {{ item.rentalStartDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}
+              –
+              {{ item.rentalEndDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}
+              · {{ item.rentalDurationDays }} day{{ item.rentalDurationDays === 1 ? '' : 's' }}
+              · {{ item.fulfillmentMethod === 'Contractor Pickup' ? 'Contractor pickup' : 'Supplier delivery' }}
+            </div>
+            <div class="cart-line__meta text-muted" *ngIf="item.fulfillmentMethod === 'Contractor Pickup'">
+              Collect from {{ item.deliveryAddress }} · no delivery fee
+            </div>
+            <div class="cart-line__meta text-muted" *ngIf="item.fulfillmentMethod !== 'Contractor Pickup'">
+              Deliver to {{ item.deliveryAddress || 'address to be confirmed' }}
+              <span *ngIf="item.deliveryFee > 0"> · delivery R {{ item.deliveryFee | number:'1.2-2' }}</span>
+            </div>
+            <div class="field-error" *ngIf="!item.isAvailable">No longer available at this quantity — update or remove.</div>
+          </div>
+          <label class="qty-wrap">
+            <span class="sr-only">Quantity</span>
+            <input type="number" min="1" [max]="item.unitsAvailable" [value]="item.quantity"
+                   [disabled]="savingItemId === item.cartItemID"
+                   (change)="updateQuantity(item, +$any($event.target).value)"
+                   class="qty-input" />
+          </label>
+          <div class="cart-line__price">
+            <div class="cart-line__now">R {{ item.priceInclVat | number:'1.2-2' }}</div>
+            <div class="cart-line__saved" *ngIf="item.discountAmount > 0">Save R {{ item.discountAmount | number:'1.2-2' }}</div>
+          </div>
+          <button type="button" class="btn btn--sm btn--ghost"
+                  [disabled]="savingItemId === item.cartItemID"
+                  (click)="removeItem(item)">Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="checkout-aside">
+      <div class="panel sticky-summary">
+        <h3 class="panel__title">Order summary</h3>
+        <div class="promo-box">
+          <label class="promo-label" for="promoCode">Promo code</label>
+          <div class="promo-row">
+            <input id="promoCode" type="text" [(ngModel)]="promoCode" name="promoCode"
+                   placeholder="e.g. SAVE10" [disabled]="applyingPromo" class="promo-input" />
+            <button type="button" class="btn btn--sm btn--outline" [disabled]="applyingPromo" (click)="applyPromo()">
+              {{ applyingPromo ? '…' : 'Apply' }}
+            </button>
+          </div>
+          <div class="field-error" *ngIf="promoFeedback && !promoOk">{{ promoFeedback }}</div>
+          <div class="text-success" *ngIf="promoFeedback && promoOk">{{ promoFeedback }}</div>
+        </div>
+        <div class="summary-line">
+          <span>Items ({{ cart.itemCount }})</span>
+          <span>R {{ cartRentalTotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-line summary-line--discount" *ngIf="cartDiscountTotal > 0">
+          <span>Discounts</span>
+          <span>-R {{ cartDiscountTotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-line" *ngIf="hasAnyDelivery">
+          <span>Delivery</span>
+          <span>R {{ cartDeliveryTotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-line" *ngIf="!hasAnyDelivery">
+          <span>Delivery</span>
+          <span>Free · contractor pickup</span>
+        </div>
+        <div class="summary-line">
+          <span>VAT</span>
+          <span>R {{ cartVatTotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-line summary-line--grand">
+          <span>Total (incl. VAT)</span>
+          <strong>R {{ cart.grandTotal | number:'1.2-2' }}</strong>
+        </div>
+        <button type="button" class="btn btn--primary btn--full mt-16"
+                [disabled]="checkingOut || cart.hasUnavailableItems"
+                (click)="checkout()">
+          {{ checkingOut ? 'Processing…' : 'Proceed to checkout' }}
+        </button>
+        <p class="checkout-note text-muted">
+          You will sign a lease agreement and pay the invoice after checkout. Amounts are in ZAR.
+          Contractor pickup is not charged a delivery fee.
+        </p>
+      </div>
+    </aside>
+  </div>
+</div>

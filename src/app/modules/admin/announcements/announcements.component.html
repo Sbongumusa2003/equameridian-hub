@@ -1,0 +1,54 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Announcements</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Broadcast a platform-wide or role-targeted announcement as an in-app notification</p>
+  </div>
+</div>
+
+<div class="page-layout">
+  <div class="page-layout__main">
+    <div class="panel">
+      <div class="alert alert--success" *ngIf="result">
+        Announcement "{{ result.title }}" sent to {{ result.recipientCount }} user(s).
+      </div>
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+      <form #announcementForm="ngForm" (ngSubmit)="announcementForm.form.valid && send()">
+        <div class="form-group">
+          <label>Title <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="form.title" name="title" required maxlength="200" placeholder="e.g. Scheduled maintenance this weekend" />
+        </div>
+        <div class="form-group">
+          <label>Message <span class="required">*</span></label>
+          <textarea rows="5" [(ngModel)]="form.body" name="body" required placeholder="Announcement details..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Audience</label>
+          <select [(ngModel)]="form.targetRole" name="targetRole">
+            <option value="">All active users</option>
+            <option value="Supplier">Suppliers only</option>
+            <option value="Contractor">Contractors only</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" [disabled]="sending || announcementForm.form.invalid">
+            {{ sending ? 'Sending...' : 'Send Announcement' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel">
+      <h4>How this works</h4>
+      <ul>
+        <li>Delivered as an in-app notification to every matching user.</li>
+        <li>Leave audience as "All active users" to reach everyone.</li>
+        <li>Recipients see it under Account &rsaquo; Notifications.</li>
+      </ul>
+    </div>
+  </div>
+</div>

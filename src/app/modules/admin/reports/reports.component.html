@@ -1,0 +1,570 @@
+<div class="reports-page">
+  <div class="reports-hero">
+    <div class="reports-hero__brand">
+      <img class="brand-logo brand-logo--reports" src="assets/brand/logo-mark.png" width="48" height="48" alt="EquaMeridian" />
+      <div class="reports-hero__title">
+        <h1>Platform Reports</h1>
+        <app-context-help topic="reports"></app-context-help>
+        <p>Summary, trend and operational insights for informed decisions</p>
+      </div>
+    </div>
+    <div class="reports-hero__meta">
+      <span class="period-chip">Live analytics</span>
+    </div>
+  </div>
+
+  <div class="reports-shell">
+    <div class="reports-toolbar" *ngIf="showDateFilters">
+      <div class="filter-field">
+        <label>From</label>
+        <input type="date" [(ngModel)]="from" />
+      </div>
+      <div class="filter-field">
+        <label>To</label>
+        <input type="date" [(ngModel)]="to" />
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn btn--primary btn--sm" type="button" (click)="applyFilters()">Apply period</button>
+      </div>
+    </div>
+
+    <nav class="report-tabs" aria-label="Report types">
+      <button type="button" class="report-tab" [class.active]="activeTab === 'revenue'" (click)="switchTab('revenue')">Revenue Summary</button>
+      <button type="button" class="report-tab" [class.active]="activeTab === 'demand'" (click)="switchTab('demand')">Demand Trends</button>
+      <button type="button" class="report-tab" [class.active]="activeTab === 'monthly-overview'" (click)="switchTab('monthly-overview')">Monthly Overview</button>
+      <button type="button" class="report-tab" [class.active]="activeTab === 'supplier-performance'" (click)="switchTab('supplier-performance')">Supplier Performance</button>
+      <button type="button" class="report-tab" [class.active]="activeTab === 'active-listings'" (click)="switchTab('active-listings')">Active Listings</button>
+      <button type="button" class="report-tab" [class.active]="activeTab === 'pending-suppliers'" (click)="switchTab('pending-suppliers')">Pending Suppliers</button>
+      <button type="button" class="report-tab" [class.active]="activeTab === 'open-disputes'" (click)="switchTab('open-disputes')">Open Disputes</button>
+    </nav>
+
+    <div class="report-body">
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+      <!-- ========== Revenue Summary (Summary + Trend) ========== -->
+      <ng-container *ngIf="activeTab === 'revenue'">
+        <div class="loading-report" *ngIf="loadingRevenue">Loading revenue report…</div>
+        <ng-container *ngIf="!loadingRevenue && revenue">
+          <div class="report-section-head">
+            <div>
+              <h3>Revenue Summary</h3>
+              <p class="section-sub">Aggregated platform revenue by category and month</p>
+            </div>
+            <div class="export-group">
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportRevenue('csv')">CSV</button>
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportRevenue('xlsx')">Excel</button>
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportRevenue('pdf')">PDF</button>
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportRevenue('docx')">Word</button>
+            </div>
+          </div>
+
+          <div class="kpi-strip">
+            <div class="kpi-card kpi-card--count">
+              <div class="kpi-card__label">Transactions</div>
+              <div class="kpi-card__value">{{ revenue.grandTransactionCount | number }}</div>
+              <div class="kpi-card__hint">Completed in period</div>
+            </div>
+            <div class="kpi-card kpi-card--revenue">
+              <div class="kpi-card__label">Total revenue</div>
+              <div class="kpi-card__value">R {{ revenue.grandTotalAmount | number:'1.0-0' }}</div>
+              <div class="kpi-card__hint">Gross booking value</div>
+            </div>
+            <div class="kpi-card kpi-card--fee">
+              <div class="kpi-card__label">Platform fees</div>
+              <div class="kpi-card__value">R {{ revenue.grandPlatformFeeAmount | number:'1.0-0' }}</div>
+              <div class="kpi-card__hint">Commission earned</div>
+            </div>
+          </div>
+
+          <div class="detail-block" *ngFor="let cat of revenue.categories">
+            <h4 class="detail-block__title">
+              {{ cat.categoryName }}
+              <span class="pill">{{ cat.categoryTransactionCount }} txns</span>
+            </h4>
+            <div class="report-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Transactions</th>
+                    <th>Subtotal</th>
+                    <th>Platform fee</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let m of cat.months">
+                    <td>{{ m.monthLabel }}</td>
+                    <td>{{ m.transactionCount }}</td>
+                    <td>R {{ m.subtotal | number:'1.0-0' }}</td>
+                    <td>R {{ m.platformFeeAmount | number:'1.0-0' }}</td>
+                    <td>R {{ m.totalAmount | number:'1.0-0' }}</td>
+                  </tr>
+                  <tr class="row-total">
+                    <td>Category total</td>
+                    <td>{{ cat.categoryTransactionCount }}</td>
+                    <td>R {{ cat.categorySubtotal | number:'1.0-0' }}</td>
+                    <td>R {{ cat.categoryPlatformFeeAmount | number:'1.0-0' }}</td>
+                    <td>R {{ cat.categoryTotalAmount | number:'1.0-0' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="empty-report" *ngIf="revenue.categories.length === 0">
+            <strong>No revenue data</strong>
+            Try a different date range.
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- ========== Demand Trends ========== -->
+      <ng-container *ngIf="activeTab === 'demand'">
+        <div class="loading-report" *ngIf="loadingDemand">Loading demand trends…</div>
+        <ng-container *ngIf="!loadingDemand && demand">
+          <div class="report-section-head">
+            <div>
+              <h3>Demand Trends</h3>
+              <p class="section-sub">Quote requests vs bookings — conversion by category</p>
+            </div>
+            <div class="export-group">
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportDemand('csv')">CSV</button>
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportDemand('xlsx')">Excel</button>
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportDemand('pdf')">PDF</button>
+            </div>
+          </div>
+
+          <div class="chart-grid" *ngIf="demand.categories.length || demand.monthlyUsage.length">
+            <app-report-chart
+              *ngIf="demandCategoryLabels.length"
+              title="Demand by category"
+              type="bar"
+              [labels]="demandCategoryLabels"
+              [series]="demandCategorySeries"
+              [height]="260"
+            ></app-report-chart>
+            <app-report-chart
+              *ngIf="demandMonthlyLabels.length"
+              title="Monthly usage trend"
+              type="area"
+              [labels]="demandMonthlyLabels"
+              [series]="demandMonthlySeries"
+              [height]="260"
+            ></app-report-chart>
+            <app-report-chart
+              *ngIf="demandCategoryLabels.length"
+              title="Booking share by category"
+              subtitle="Where confirmed bookings come from"
+              type="donut"
+              [labels]="demandCategoryLabels"
+              [series]="demandBookingShareSeries"
+            ></app-report-chart>
+          </div>
+
+          <div class="detail-block">
+            <h4 class="detail-block__title">Demand by category</h4>
+            <div class="report-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Quote requests</th>
+                    <th>Bookings</th>
+                    <th>Conversion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let c of demand.categories">
+                    <td><strong>{{ c.categoryName }}</strong></td>
+                    <td>{{ c.quotationRequestCount }}</td>
+                    <td>{{ c.bookingCount }}</td>
+                    <td>
+                      <div class="conversion-bar">
+                        <div class="conversion-bar__track">
+                          <div class="conversion-bar__fill"
+                               [style.width.%]="Math.min(100, c.conversionRatePercent || 0)"></div>
+                        </div>
+                        <span class="conversion-bar__label">{{ c.conversionRatePercent | number:'1.1-1' }}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="demand.categories.length === 0">
+                    <td colspan="4" class="text-center">No demand data for this period.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <h4 class="detail-block__title">Monthly usage</h4>
+            <div class="report-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Month</th><th>Quotations</th><th>Bookings</th></tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let m of demand.monthlyUsage">
+                    <td>{{ m.monthLabel }}</td>
+                    <td>{{ m.quotationCount }}</td>
+                    <td>{{ m.bookingCount }}</td>
+                  </tr>
+                  <tr *ngIf="demand.monthlyUsage.length === 0">
+                    <td colspan="3" class="text-center">No usage data for this period.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- ========== Active Listings ========== -->
+      <ng-container *ngIf="activeTab === 'active-listings'">
+        <div class="loading-report" *ngIf="loadingActiveListings">Loading active listings…</div>
+        <ng-container *ngIf="!loadingActiveListings && activeListings">
+          <div class="report-section-head">
+            <div>
+              <h3>Active Listings</h3>
+              <p class="section-sub">Detailed inventory currently available for hire</p>
+            </div>
+            <div class="section-head-actions">
+              <label class="chart-toggle">
+                <input type="checkbox" [(ngModel)]="showChartsActiveListings" />
+                <span>Show charts</span>
+              </label>
+              <div class="export-group">
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportActiveListings('csv')">CSV</button>
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportActiveListings('xlsx')">Excel</button>
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportActiveListings('pdf')">PDF</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-strip" *ngIf="showChartsActiveListings">
+            <div class="kpi-card kpi-card--count">
+              <div class="kpi-card__label">Active listings</div>
+              <div class="kpi-card__value">{{ activeListings.totalCount | number }}</div>
+              <div class="kpi-card__hint">Bookable on the marketplace</div>
+            </div>
+            <div class="kpi-card kpi-card--revenue">
+              <div class="kpi-card__label">Avg. daily rate</div>
+              <div class="kpi-card__value">R {{ activeListingsAvgRate | number:'1.0-0' }}</div>
+              <div class="kpi-card__hint">Across live inventory</div>
+            </div>
+            <div class="kpi-card kpi-card--fee">
+              <div class="kpi-card__label">Avg. rating</div>
+              <div class="kpi-card__value">{{ activeListingsAvgRatingLabel }}</div>
+              <div class="kpi-card__hint">Listings with reviews only</div>
+            </div>
+            <div class="kpi-card kpi-card--neutral">
+              <div class="kpi-card__label">Categories</div>
+              <div class="kpi-card__value">{{ activeListingsCategoryLabels.length | number }}</div>
+              <div class="kpi-card__hint">Distinct machine types</div>
+            </div>
+          </div>
+
+          <!-- Charts aligned with PDF export: vertical category bars + highest rates + mix donut -->
+          <div class="chart-grid" *ngIf="showChartsActiveListings && activeListingsCategoryLabels.length">
+            <app-report-chart
+              title="Listings by category"
+              type="bar"
+              [labels]="activeListingsCategoryLabels"
+              [series]="[{ name: 'Listings', values: activeListingsCategoryValues, color: '#C9A227' }]"
+              [height]="260"
+            ></app-report-chart>
+            <app-report-chart
+              title="Category mix"
+              subtitle="Share of active inventory"
+              type="donut"
+              [labels]="activeListingsCategoryLabels"
+              [series]="[{ name: 'Listings', values: activeListingsCategoryValues }]"
+            ></app-report-chart>
+          </div>
+
+          <div class="chart-grid chart-grid--full" *ngIf="showChartsActiveListings && activeListingsTopRateLabels.length">
+            <app-report-chart
+              title="Highest daily rates"
+              type="horizontal-bar"
+              [labels]="activeListingsTopRateLabels"
+              [series]="[{ name: 'Daily rate', values: activeListingsTopRateValues, color: '#C9A227' }]"
+              valuePrefix="R"
+              [height]="Math.max(160, activeListingsTopRateLabels.length * 36 + 70)"
+            ></app-report-chart>
+          </div>
+
+          <div class="detail-block">
+            <h4 class="detail-block__title">Listing detail</h4>
+            <div class="report-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Title</th><th>Category</th><th>Supplier</th><th>Daily rate</th>
+                    <th>Location</th><th>Rating</th><th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let l of activeListings.listings">
+                    <td><strong>{{ l.listingTitle }}</strong></td>
+                    <td>{{ l.categoryName }}</td>
+                    <td>{{ l.supplierName }}</td>
+                    <td>R {{ l.dailyRateZAR | number:'1.0-0' }}</td>
+                    <td>{{ l.location || '—' }}</td>
+                    <td>{{ l.averageRating | number:'1.1-1' }}</td>
+                    <td>{{ l.createdDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+                  </tr>
+                  <tr *ngIf="activeListings.listings.length === 0">
+                    <td colspan="7" class="text-center">No active listings.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- ========== Monthly Overview ========== -->
+      <ng-container *ngIf="activeTab === 'monthly-overview'">
+        <div class="loading-report" *ngIf="loadingMonthlyOverview">Loading monthly overview…</div>
+        <ng-container *ngIf="!loadingMonthlyOverview && monthlyOverview">
+          <div class="report-section-head">
+            <div>
+              <h3>Monthly Overview</h3>
+              <p class="section-sub">Gross revenue vs platform commission over time</p>
+            </div>
+            <div class="export-group">
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportMonthlyOverview('xlsx')">Excel</button>
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportMonthlyOverview('pdf')">PDF</button>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <h4 class="detail-block__title">Month-by-month breakdown</h4>
+            <div class="report-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Gross revenue</th>
+                    <th>Platform commission</th>
+                    <th>Bookings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let m of monthlyOverview.months">
+                    <td><strong>{{ m.monthLabel }}</strong></td>
+                    <td>R {{ m.grossRevenue | number:'1.0-0' }}</td>
+                    <td>R {{ m.platformCommission | number:'1.0-0' }}</td>
+                    <td>{{ m.bookingCount }}</td>
+                  </tr>
+                  <tr *ngIf="monthlyOverview.months.length === 0">
+                    <td colspan="4" class="text-center">No overview data for this period.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- ========== Pending Suppliers (Exception-style) ========== -->
+      <ng-container *ngIf="activeTab === 'pending-suppliers'">
+        <div class="loading-report" *ngIf="loadingPendingSuppliers">Loading pending suppliers…</div>
+        <ng-container *ngIf="!loadingPendingSuppliers && pendingSuppliers">
+          <div class="report-section-head">
+            <div>
+              <h3>Pending Supplier Approvals</h3>
+              <p class="section-sub">Exception view — suppliers awaiting document / account approval</p>
+            </div>
+            <div class="section-head-actions">
+              <label class="chart-toggle">
+                <input type="checkbox" [(ngModel)]="showChartsPendingSuppliers" />
+                <span>Show summary</span>
+              </label>
+              <div class="export-group">
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportPendingSuppliers('csv')">CSV</button>
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportPendingSuppliers('xlsx')">Excel</button>
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportPendingSuppliers('pdf')">PDF</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-strip" *ngIf="showChartsPendingSuppliers">
+            <div class="kpi-card kpi-card--alert">
+              <div class="kpi-card__label">Pending approvals</div>
+              <div class="kpi-card__value">{{ pendingSuppliers.totalCount | number }}</div>
+              <div class="kpi-card__hint">Requires admin action</div>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <h4 class="detail-block__title">Queue detail</h4>
+            <div class="report-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th><th>Email</th><th>Company</th><th>Registration</th>
+                    <th>Applied</th><th>Days pending</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let s of pendingSuppliers.suppliers">
+                    <td><strong>{{ s.fullName }}</strong></td>
+                    <td>{{ s.email }}</td>
+                    <td>{{ s.companyName || '—' }}</td>
+                    <td>{{ s.registrationNumber || '—' }}</td>
+                    <td>{{ s.createdDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+                    <td>
+                      <span class="urgency"
+                            [class.urgency--ok]="s.daysPending < 3"
+                            [class.urgency--warn]="s.daysPending >= 3 && s.daysPending < 7"
+                            [class.urgency--bad]="s.daysPending >= 7">
+                        {{ s.daysPending }}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="pendingSuppliers.suppliers.length === 0">
+                    <td colspan="6" class="text-center">No suppliers awaiting approval.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- ========== Open Disputes (Exception) ========== -->
+      <ng-container *ngIf="activeTab === 'open-disputes'">
+        <div class="loading-report" *ngIf="loadingOpenDisputes">Loading open disputes…</div>
+        <ng-container *ngIf="!loadingOpenDisputes && openDisputes">
+          <div class="report-section-head">
+            <div>
+              <h3>Open Disputes</h3>
+              <p class="section-sub">Exception view — cases that need resolution</p>
+            </div>
+            <div class="section-head-actions">
+              <label class="chart-toggle">
+                <input type="checkbox" [(ngModel)]="showChartsOpenDisputes" />
+                <span>Show summary</span>
+              </label>
+              <div class="export-group">
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportOpenDisputes('csv')">CSV</button>
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportOpenDisputes('xlsx')">Excel</button>
+                <button type="button" class="btn-export" [disabled]="exporting" (click)="exportOpenDisputes('pdf')">PDF</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-strip" *ngIf="showChartsOpenDisputes">
+            <div class="kpi-card kpi-card--alert">
+              <div class="kpi-card__label">Open disputes</div>
+              <div class="kpi-card__value">{{ openDisputes.totalCount | number }}</div>
+              <div class="kpi-card__hint">Unresolved cases</div>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <h4 class="detail-block__title">Case detail</h4>
+            <div class="report-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ref</th><th>Contractor</th><th>Supplier</th><th>Reason</th>
+                    <th>Amount</th><th>Status</th><th>Raised</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let d of openDisputes.disputes">
+                    <td><strong>{{ d.bookingReference }}</strong></td>
+                    <td>{{ d.contractorName }}</td>
+                    <td>{{ d.supplierName }}</td>
+                    <td>{{ d.reasonCategory }}</td>
+                    <td>R {{ d.bookingAmount | number:'1.0-0' }}</td>
+                    <td><app-status-badge [status]="d.status"></app-status-badge></td>
+                    <td>{{ d.raisedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+                  </tr>
+                  <tr *ngIf="openDisputes.disputes.length === 0">
+                    <td colspan="7" class="text-center">No open disputes.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- ========== Supplier Performance ========== -->
+      <ng-container *ngIf="activeTab === 'supplier-performance'">
+        <div class="loading-report" *ngIf="loadingSupplierPerformance">Loading supplier performance…</div>
+        <ng-container *ngIf="!loadingSupplierPerformance && supplierPerformance">
+          <div class="report-section-head">
+            <div>
+              <h3>Supplier Performance</h3>
+              <p class="section-sub">Control-break report — revenue contribution by supplier</p>
+            </div>
+            <div class="export-group">
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportSupplierPerformance('csv')">CSV</button>
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportSupplierPerformance('xlsx')">Excel</button>
+              <button type="button" class="btn-export" [disabled]="exporting" (click)="exportSupplierPerformance('pdf')">PDF</button>
+            </div>
+          </div>
+
+          <div class="kpi-strip">
+            <div class="kpi-card kpi-card--count">
+              <div class="kpi-card__label">Transactions</div>
+              <div class="kpi-card__value">{{ supplierPerformance.grandTransactionCount | number }}</div>
+            </div>
+            <div class="kpi-card kpi-card--revenue">
+              <div class="kpi-card__label">Total revenue</div>
+              <div class="kpi-card__value">R {{ supplierPerformance.grandTotalAmount | number:'1.0-0' }}</div>
+            </div>
+            <div class="kpi-card kpi-card--fee">
+              <div class="kpi-card__label">Platform fees</div>
+              <div class="kpi-card__value">R {{ supplierPerformance.grandPlatformFeeAmount | number:'1.0-0' }}</div>
+            </div>
+          </div>
+
+          <div class="detail-block" *ngFor="let s of supplierPerformance.suppliers">
+            <h4 class="detail-block__title">
+              {{ s.supplierName }}
+              <span class="pill">R {{ s.supplierTotalAmount | number:'1.0-0' }}</span>
+            </h4>
+            <div class="report-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Transactions</th>
+                    <th>Subtotal</th>
+                    <th>Platform fee</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let m of s.months">
+                    <td>{{ m.monthLabel }}</td>
+                    <td>{{ m.transactionCount }}</td>
+                    <td>R {{ m.subtotal | number:'1.0-0' }}</td>
+                    <td>R {{ m.platformFeeAmount | number:'1.0-0' }}</td>
+                    <td>R {{ m.totalAmount | number:'1.0-0' }}</td>
+                  </tr>
+                  <tr class="row-total">
+                    <td>Supplier total</td>
+                    <td>{{ s.supplierTransactionCount }}</td>
+                    <td>R {{ s.supplierSubtotal | number:'1.0-0' }}</td>
+                    <td>R {{ s.supplierPlatformFeeAmount | number:'1.0-0' }}</td>
+                    <td>R {{ s.supplierTotalAmount | number:'1.0-0' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="empty-report" *ngIf="supplierPerformance.suppliers.length === 0">
+            <strong>No supplier performance data</strong>
+            Try a different date range.
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+  </div>
+</div>

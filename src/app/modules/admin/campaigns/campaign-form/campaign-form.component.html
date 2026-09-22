@@ -1,0 +1,112 @@
+<div class="breadcrumb">
+  <a routerLink="/admin/campaigns">Marketing Campaigns</a>
+  <span>›</span>
+  <span>{{ isEdit ? 'Edit Campaign' : 'New Campaign' }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading campaign...</div>
+
+<div class="form-panel" *ngIf="!loading">
+  <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+  <div class="form-section">
+    <h4>Campaign Details</h4>
+    <div class="form-group">
+      <label>Campaign Name <span class="required">*</span></label>
+      <input type="text" [(ngModel)]="form.name" maxlength="200" />
+    </div>
+
+    <div class="form-group" *ngIf="!isEdit">
+      <label>Type <span class="required">*</span></label>
+      <select [(ngModel)]="form.type">
+        <option *ngFor="let t of campaignTypes" [value]="t">{{ t }}</option>
+      </select>
+    </div>
+    <div class="form-group" *ngIf="isEdit">
+      <label>Type</label>
+      <input type="text" [value]="form.type" readonly />
+    </div>
+
+    <div class="form-group">
+      <label>Description <span class="required">*</span></label>
+      <textarea rows="3" [(ngModel)]="form.description" maxlength="2000"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Audience</label>
+        <select [(ngModel)]="form.audience">
+          <option *ngFor="let a of campaignAudiences" [value]="a">{{ a }}</option>
+        </select>
+      </div>
+      <div class="form-group" *ngIf="isEdit">
+        <label>Status</label>
+        <select [(ngModel)]="form.status">
+          <option *ngFor="let s of campaignStatuses" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Start Date <span class="required">*</span></label>
+        <input type="date" [(ngModel)]="form.startDate" />
+      </div>
+      <div class="form-group">
+        <label>End Date <span class="required">*</span></label>
+        <input type="date" [(ngModel)]="form.endDate" />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section" *ngIf="isBanner">
+    <h4>Banner Settings</h4>
+    <div class="form-group">
+      <label>Banner Image URL</label>
+      <input type="text" [(ngModel)]="form.bannerImageURL" placeholder="https://..." />
+
+      <div class="form-group" *ngIf="form.type === 'Banner'">
+        <label>Upload banner image</label>
+        <input type="file" accept="image/*" (change)="onBannerSelected($event)" [disabled]="uploadingBanner" />
+        <div class="text-muted" *ngIf="uploadingBanner">Uploading...</div>
+        <div class="text-muted" *ngIf="bannerUploadMsg">{{ bannerUploadMsg }}</div>
+        <div class="text-muted" *ngIf="form.bannerImageURL">URL: {{ form.bannerImageURL }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section" *ngIf="isDiscount">
+    <h4>Discount Settings</h4>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Discount Value (%) <span class="required">*</span></label>
+        <input type="number" min="1" max="100" step="1" [(ngModel)]="form.discountValue" />
+      </div>
+      <div class="form-group">
+        <label>Discount Code <span class="required">*</span></label>
+        <input type="text" [(ngModel)]="form.discountCode" placeholder="e.g. SAVE10"
+               style="text-transform:uppercase" />
+        <small class="hint">Contractors enter this on Cart → Promo code. Campaign must be Published and Active (dates include today).</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section" *ngIf="isFeatured">
+    <h4>Featured Listing</h4>
+    <div class="form-group">
+      <label>Listing</label>
+      <select [(ngModel)]="form.featuredListingID">
+        <option [ngValue]="null">Select listing...</option>
+        <option *ngFor="let l of listingOptions" [ngValue]="l.listingID">{{ l.listingTitle }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn--ghost" (click)="cancel()">Cancel</button>
+    <button *ngIf="!isEdit" class="btn btn--outline" [disabled]="saving" (click)="save(true)">Save as Draft</button>
+    <button class="btn btn--primary" [disabled]="saving" (click)="save(false)">
+      {{ saving ? 'Saving...' : (isEdit ? 'Save Changes' : 'Publish Campaign') }}
+    </button>
+  </div>
+</div>

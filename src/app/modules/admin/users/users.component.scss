@@ -1,0 +1,39 @@
+.reject-reason-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+
+  .search-input { flex: 1; }
+}
+
+/* The Manage modal holds a documents table with several columns and an
+   audit log — the base .modal's 520px is too narrow for those without
+   forcing the page to scroll horizontally. Widening it here (rather than
+   raising the global .modal max-width) keeps every other modal in the app
+   at its original, tighter size. */
+.modal--wide {
+  max-width: 720px;
+}
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--color-surface-alt);
+  color: var(--color-text-secondary);
+}
+
+.info-note a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  margin-left: 4px;
+}

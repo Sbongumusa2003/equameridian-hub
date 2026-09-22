@@ -1,0 +1,98 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Invoices</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="admin-invoices"></app-context-help>
+    <p>All invoices across the platform. Use "Generate Invoice" for a manual override when an accepted quotation didn't produce one automatically.</p>
+  </div>
+</div>
+
+<div class="panel p-0" >
+  <div class="filter-bar p-16">
+    <button class="btn btn--primary" (click)="openGenerateModal()">Generate Invoice</button>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">Loading invoices...</div>
+  <div class="empty-state" *ngIf="!loading && invoices.length === 0">No invoices yet.</div>
+
+  <table class="data-table" *ngIf="!loading && invoices.length > 0">
+    <thead>
+      <tr>
+        <th>Invoice #</th>
+        <th>Listing</th>
+        <th>Invoice Date</th>
+        <th>Due Date</th>
+        <th>Total</th>
+        <th>Payment Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let inv of invoices">
+        <td><strong>{{ inv.invoiceNumber }}</strong></td>
+        <td>{{ inv.listingTitle }}</td>
+        <td>{{ inv.invoiceDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td>{{ inv.dueDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td>R {{ inv.totalAmount | number }}</td>
+        <td><app-status-badge [status]="inv.paymentStatus"></app-status-badge></td>
+        <td><button class="btn btn--sm btn--outline" (click)="viewDetail(inv)">View</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer" *ngIf="!loading && invoices.length > 0">
+    <span>{{ totalCount }} invoice(s)</span>
+    <div class="pagination">
+      <button [disabled]="page === 1" (click)="goToPage(page - 1)">‹</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page === totalPages" (click)="goToPage(page + 1)">›</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showGenerateModal" (click)="closeGenerateModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Generate Invoice</h3>
+    <p class="text-muted">Manually create an invoice for an accepted quotation. This is normally done automatically — use this only if a quotation was accepted but no invoice was created.</p>
+
+    <div class="alert alert--error" *ngIf="generateError">{{ generateError }}</div>
+    <div class="alert alert--success" *ngIf="generateSuccess">{{ generateSuccess }}</div>
+
+    <label>Quotation ID
+      <input type="number" min="1" [(ngModel)]="quotationId" placeholder="e.g. 1024" />
+    </label>
+
+    <div class="flex gap-8 mt-16">
+ <button class="btn btn--primary flex-1" [disabled]="generating" (click)="generate()">
+        {{ generating ? 'Generating...' : 'Generate' }}
+      </button>
+ <button class="btn btn--ghost flex-1" (click)="closeGenerateModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showDetailModal && selectedInvoice" (click)="closeDetail()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Invoice {{ selectedInvoice.invoiceNumber }}</h3>
+    <div class="info-row"><span>Listing</span><strong>{{ selectedInvoice.listingTitle }}</strong></div>
+    <div class="info-row"><span>Contractor</span><strong>{{ selectedInvoice.contractorName }}</strong></div>
+    <div class="info-row"><span>Supplier</span><strong>{{ selectedInvoice.supplierName }}</strong></div>
+    <div class="info-row"><span>Invoice Date</span><strong>{{ selectedInvoice.invoiceDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+    <div class="info-row"><span>Due Date</span><strong>{{ selectedInvoice.dueDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+    <div class="info-row"><span>Subtotal</span><strong>R {{ selectedInvoice.subtotal | number }}</strong></div>
+    <div class="info-row"><span>VAT ({{ selectedInvoice.vatRate }}%)</span><strong>R {{ selectedInvoice.vatAmount | number }}</strong></div>
+    <div class="info-row"><span>Total Amount</span><strong>R {{ selectedInvoice.totalAmount | number }}</strong></div>
+    <div class="info-row"><span>Platform Fee ({{ selectedInvoice.platformFeePercentage }}%)</span><strong>R {{ selectedInvoice.platformFeeAmount | number }}</strong></div>
+    <div class="info-row"><span>Supplier Payable</span><strong>R {{ selectedInvoice.supplierPayableAmount | number }}</strong></div>
+    <div class="info-row"><span>Payment Status</span><app-status-badge [status]="selectedInvoice.paymentStatus"></app-status-badge></div>
+    <div class="alert alert--info mt-8" *ngIf="syncMessage">{{ syncMessage }}</div>
+    <button class="btn btn--outline btn--full mt-8"
+            *ngIf="selectedInvoice.paymentStatus === 'Pending'"
+            [disabled]="syncingId === selectedInvoice.invoiceID"
+            (click)="forceSync(selectedInvoice.invoiceID)">
+      {{ syncingId === selectedInvoice.invoiceID ? 'Syncing with PayFast...' : 'Force sync payment status' }}
+    </button>
+    <button class="btn btn--ghost btn--full mt-16" (click)="closeDetail()">Close</button>
+  </div>
+</div>

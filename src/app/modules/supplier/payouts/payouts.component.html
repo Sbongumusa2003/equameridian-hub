@@ -1,0 +1,99 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Payouts</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="payouts"></app-context-help>
+    <p>Request a payout on paid invoices and track admin approval.</p>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+<div class="alert alert--success" *ngIf="requestSuccessId">
+  Payout request #{{ requestSuccessId }} submitted. An administrator will review it shortly.
+</div>
+
+<div class="panel">
+  <h3>Available to Request</h3>
+  <p class="text-muted">Paid invoices with no payout request in progress yet.</p>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>INVOICE</th><th>LISTING</th><th>GROSS</th><th>COMMISSION</th><th>VAT</th><th>YOU RECEIVE</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loadingEligible"><td colspan="7" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let inv of eligibleInvoices">
+        <td><strong>{{ inv.invoiceNumber }}</strong></td>
+        <td>{{ inv.listingTitle }}</td>
+        <td>R {{ inv.grossAmount | number }}</td>
+        <td>R {{ inv.commissionAmount | number }}</td>
+        <td>R {{ inv.vatAmount | number }}</td>
+        <td><strong>R {{ inv.payoutAmount | number }}</strong></td>
+        <td>
+          <button class="btn btn--sm btn--primary" (click)="openRequestModal(inv)">Request Payout</button>
+        </td>
+      </tr>
+      <tr *ngIf="!loadingEligible && eligibleInvoices.length === 0">
+        <td colspan="7" class="text-center">No invoices are currently available for payout.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="panel mt-16">
+  <h3>My Payout Requests</h3>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>PAYOUT</th><th>INVOICE</th><th>AMOUNT</th><th>STATUS</th><th>REQUESTED</th><th>DETAILS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loadingPayouts"><td colspan="6" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let p of myPayouts">
+        <td><strong>#{{ p.payoutID }}</strong></td>
+        <td>{{ p.invoiceNumber }}</td>
+        <td>R {{ p.payoutAmount | number }}</td>
+        <td><app-status-badge [status]="p.status"></app-status-badge></td>
+        <td>{{ p.requestedDate | date:'d MMM yyyy' }}</td>
+        <td>
+          <span *ngIf="p.status === 'Declined' && p.declineReason" class="text-muted">{{ p.declineReason }}</span>
+          <span *ngIf="p.status === 'Approved'" class="text-muted">Paid out {{ p.processedDate | date:'d MMM yyyy' }}</span>
+        </td>
+      </tr>
+      <tr *ngIf="!loadingPayouts && myPayouts.length === 0">
+        <td colspan="6" class="text-center">You haven't requested any payouts yet.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="modal-overlay" *ngIf="showRequestModal && requestTarget" (click)="closeRequestModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Request Payout</h3>
+    <p>Invoice {{ requestTarget.invoiceNumber }} &middot; {{ requestTarget.listingTitle }}</p>
+
+    <div class="alert alert--error" *ngIf="requestError">{{ requestError }}</div>
+
+    <div class="info-row"><span>Gross Amount</span><strong>R {{ requestTarget.grossAmount | number }}</strong></div>
+    <div class="info-row"><span>Commission</span><strong>&ndash;R {{ requestTarget.commissionAmount | number }}</strong></div>
+    <div class="info-row"><span>VAT</span><strong>R {{ requestTarget.vatAmount | number }}</strong></div>
+    <div class="info-row"><span>You'll Receive</span><strong>R {{ requestTarget.payoutAmount | number }}</strong></div>
+
+    <div class="form-group mt-16">
+      <label>Notes (optional)</label>
+      <textarea rows="2" [(ngModel)]="requestNotes" placeholder="Anything the admin should know..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn--ghost" [disabled]="requestSubmitting" (click)="closeRequestModal()">Cancel</button>
+      <button class="btn btn--primary" [disabled]="requestSubmitting" (click)="submitRequest()">
+        {{ requestSubmitting ? 'Submitting...' : 'Submit Request' }}
+      </button>
+    </div>
+  </div>
+</div>

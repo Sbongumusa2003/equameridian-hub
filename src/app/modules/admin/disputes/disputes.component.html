@@ -1,0 +1,53 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Disputes</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="admin-disputes"></app-context-help>
+    <p>Review and resolve booking disputes between contractors and suppliers</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <input type="text" placeholder="Search by contractor, supplier or listing..."
+           class="search-input" (input)="onSearch($any($event.target).value)" />
+    <select [(ngModel)]="statusFilter" (change)="page = 1; load()">
+      <option value="">All Statuses</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+    </select>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>DISPUTE</th><th>CONTRACTOR</th><th>SUPPLIER</th>
+        <th>REASON</th><th>STATUS</th><th>RAISED</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="7" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let d of disputes">
+        <td><strong>#{{ d.disputeID }}</strong><small>{{ d.listingTitle || '—' }}</small></td>
+        <td>{{ d.contractorName }}</td>
+        <td>{{ d.supplierName }}</td>
+        <td>{{ d.reasonCategory }}</td>
+        <td><app-status-badge [status]="d.status"></app-status-badge></td>
+        <td>{{ d.raisedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td><a class="btn btn--sm btn--outline" [routerLink]="['/admin/disputes', d.disputeID]">Review</a></td>
+      </tr>
+      <tr *ngIf="!loading && disputes.length === 0">
+        <td colspan="7" class="text-center">No disputes found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Showing {{ disputes.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }} disputes</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>

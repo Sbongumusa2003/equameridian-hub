@@ -1,0 +1,210 @@
+<div class="breadcrumb">
+  <a routerLink="/transactions/lease-agreements">Lease Agreements</a>
+  <span>›</span>
+  <span>{{ agreement?.agreementNumber ?? 'Agreement' }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading agreement...</div>
+<div class="empty-state" *ngIf="!loading && !agreement">Agreement not found.</div>
+
+<div class="page-layout" *ngIf="!loading && agreement">
+  <div class="page-layout__main">
+    <div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
+
+    <div class="panel">
+      <div class="listing-card__header">
+        <h3 class="detail-title">Lease Agreement {{ agreement.agreementNumber }}</h3>
+        <app-status-badge [status]="agreement.status"></app-status-badge>
+      </div>
+      <p class="text-muted">{{ agreement.listingTitle }} — {{ agreement.category }}</p>
+
+ <div class="info-grid mt-20" >
+        <div><small>Supplier</small><span>{{ agreement.supplierName }}</span></div>
+        <div><small>Contractor</small><span>{{ agreement.contractorName }}</span></div>
+        <div><small>Quantity</small><span>{{ agreement.quantity }}</span></div>
+      </div>
+
+      <div class="info-row"><span>Machinery</span><strong>{{ agreement.make }} {{ agreement.model }} ({{ agreement.year }})</strong></div>
+      <div class="info-row"><span>Location</span><strong>{{ agreement.location || '—' }}</strong></div>
+      <div class="info-row"><span>Rental Period</span><strong>{{ agreement.rentalStartDate | date:'mediumDate' }} – {{ agreement.rentalEndDate | date:'mediumDate' }}</strong></div>
+
+      <div class="invoice-slip" id="leaseInvoiceSlip">
+        <div class="invoice-slip__head">
+          <div>
+            <div class="invoice-slip__brand">EquaMeridian</div>
+            <div class="invoice-slip__kicker">Tax invoice · {{ agreement.agreementNumber }}</div>
+          </div>
+          <button type="button" class="btn btn--sm btn--outline no-print" [disabled]="downloadingPdf" (click)="downloadInvoicePdf()">
+            {{ downloadingPdf ? 'Generating…' : 'Download PDF' }}
+          </button>
+        </div>
+        <div class="invoice-slip__meta">
+          <div><span>From</span><strong>{{ agreement.supplierName }}</strong></div>
+          <div><span>Bill to</span><strong>{{ agreement.contractorName }}</strong></div>
+          <div><span>Period</span><strong>{{ agreement.rentalStartDate | date:'dd MMM yyyy':'Africa/Johannesburg' }} – {{ agreement.rentalEndDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+        </div>
+        <div class="invoice-slip__item">
+          <div>
+            <strong>{{ agreement.listingTitle }}</strong>
+            <div class="text-muted">{{ agreement.make }} {{ agreement.model }} · Qty {{ agreement.quantity }}</div>
+          </div>
+          <strong>R {{ agreement.rentalSubtotal | number:'1.2-2' }}</strong>
+        </div>
+        <div class="invoice-slip__lines">
+          <div class="invoice-slip__line"><span>Subtotal</span><span>R {{ agreement.rentalSubtotal | number:'1.2-2' }}</span></div>
+          <div class="invoice-slip__line" *ngIf="(agreement.discountAmount || 0) > 0"><span>Discount</span><span>-R {{ agreement.discountAmount | number:'1.2-2' }}</span></div>
+          <div class="invoice-slip__line" *ngIf="(agreement.deliveryFee || 0) > 0"><span>Delivery</span><span>R {{ agreement.deliveryFee | number:'1.2-2' }}</span></div>
+          <div class="invoice-slip__line" *ngIf="!(agreement.deliveryFee)"><span>Delivery</span><span>Free · pickup</span></div>
+          <div class="invoice-slip__line"><span>VAT</span><span>R {{ agreement.vatAmount | number:'1.2-2' }}</span></div>
+          <div class="invoice-slip__line invoice-slip__line--total"><span>Total (incl. VAT)</span><strong>R {{ agreement.totalAmount | number:'1.2-2' }}</strong></div>
+        </div>
+      </div>
+      <div class="info-row" *ngIf="agreement.depositAmount"><span>Deposit</span><strong>R {{ agreement.depositAmount | number:'1.2-2' }}</strong></div>
+      <div class="info-row"><span>Payment Due Date</span><strong>{{ agreement.paymentDueDate | date:'mediumDate' }}</strong></div>
+      <div class="info-row"><span>Payment Method</span><strong>{{ agreement.paymentMethod }}</strong></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__title">Terms &amp; Conditions</div>
+      <div class="form-section">
+        <h4>Standard Terms</h4>
+        <p class="text-muted">{{ agreement.standardTerms }}</p>
+      </div>
+      <div class="form-section" *ngIf="agreement.specialConditions">
+        <h4>Special Conditions</h4>
+        <p class="text-muted">{{ agreement.specialConditions }}</p>
+      </div>
+      <div class="form-section">
+        <h4>Cancellation Policy</h4>
+        <p class="text-muted">{{ agreement.cancellationPolicy }}</p>
+      </div>
+      <div class="form-section">
+        <h4>Liability &amp; Insurance</h4>
+        <p class="text-muted">{{ agreement.liabilityAndInsuranceTerms }}</p>
+      </div>
+      <div class="form-section">
+        <h4>Damage &amp; Maintenance Provisions</h4>
+        <p class="text-muted">{{ agreement.damageAndMaintenanceProvisions }}</p>
+      </div>
+    </div>
+
+    <div class="panel">
+ <div class="panel__title page-header--row mb-0" >
+        <span>Job Documents</span>
+        <button class="btn btn--sm btn--outline" (click)="openUpload()">+ Upload Document</button>
+      </div>
+
+      <div class="loading-state" *ngIf="documentsLoading">Loading documents...</div>
+      <div class="empty-state" *ngIf="!documentsLoading && documentGroups.length === 0">
+        {{ documentsMessage || 'No job documents have been uploaded for this agreement yet.' }}
+      </div>
+
+      <div class="form-section" *ngFor="let group of documentGroups">
+        <h4>{{ group.label }}</h4>
+        <div class="info-row" *ngFor="let doc of group.docs">
+          <span>
+            {{ doc.documentName }}
+            <small class="text-muted">&middot; {{ doc.uploadedByName }} &middot; {{ doc.uploadedDate | date:'d MMM yyyy' }} &middot; {{ formatFileSize(doc.fileSizeBytes) }}</small>
+          </span>
+          <span class="action-cell">
+            <button class="btn btn--sm btn--outline" (click)="viewDocument(doc.jobDocumentID)">View</button>
+            <button class="btn btn--sm btn--outline" (click)="downloadDocument(doc.jobDocumentID, doc.documentName)">Download</button>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__title">Signatures</div>
+      <div class="info-row">
+        <span>Supplier</span>
+        <strong *ngIf="agreement.supplierSigned">
+          Signed by {{ agreement.supplierSignatureName }} on {{ agreement.supplierSignedDate | date:'mediumDate' }}
+        </strong>
+        <strong *ngIf="!agreement.supplierSigned">Not yet signed</strong>
+      </div>
+      <div class="info-row">
+        <span>Contractor</span>
+        <strong *ngIf="agreement.contractorSigned">
+          Signed by {{ agreement.contractorSignatureName }} on {{ agreement.contractorSignedDate | date:'mediumDate' }}
+        </strong>
+        <strong *ngIf="!agreement.contractorSigned">Not yet signed</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="panel" *ngIf="agreement.canSign && !alreadySignedByMe">
+      <div class="panel__title">Sign Agreement</div>
+      <button class="btn btn--primary btn--full" (click)="openSign()">Review &amp; Sign</button>
+    </div>
+    <div class="info-panel" *ngIf="alreadySignedByMe">
+      <h4>You've signed this agreement</h4>
+      <p class="fs-13 text-secondary-color">Waiting for the other party to countersign.</p>
+    </div>
+    <div class="info-panel">
+      <h4>Related</h4>
+      <a class="quick-action" routerLink="/transactions/bookings">View Bookings</a>
+      <a class="quick-action" routerLink="/transactions/invoices">View Invoices</a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showSignDialog" (click)="showSignDialog = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Sign Lease Agreement</h3>
+    <p>By signing, you agree this document is legally binding.</p>
+
+    <div class="form-group">
+      <label>Full Name <span class="required">*</span></label>
+      <input type="text" [(ngModel)]="signForm.fullName" />
+    </div>
+    <div class="form-group">
+      <label class="flex items-start gap-8 fw-400">
+        <input type="checkbox" [(ngModel)]="signForm.acknowledgeTermsRead" class="w-auto" />
+        <span>I confirm I have read and understood the terms of this lease agreement.</span>
+      </label>
+    </div>
+    <div class="form-group">
+      <label class="flex items-start gap-8 fw-400">
+        <input type="checkbox" [(ngModel)]="signForm.acknowledgeLegallyBinding" class="w-auto" />
+        <span>I understand this signature is legally binding.</span>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn--ghost" (click)="showSignDialog = false">Cancel</button>
+      <button class="btn btn--primary" [disabled]="processing" (click)="submitSign()">
+        {{ processing ? 'Signing...' : 'Sign Agreement' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showUploadModal" (click)="closeUpload()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Upload Job Document</h3>
+    <p>Add a document to this lease agreement</p>
+
+    <div class="alert alert--error" *ngIf="uploadError">{{ uploadError }}</div>
+
+    <div class="form-group">
+      <label>Document Type</label>
+      <select [(ngModel)]="uploadForm.documentType">
+        <option *ngFor="let t of documentTypes" [value]="t">{{ documentTypeLabels[t] }}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>File</label>
+      <input type="file" (change)="onFileSelected($event)" />
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn--ghost" (click)="closeUpload()">Cancel</button>
+      <button class="btn btn--primary" [disabled]="uploading" (click)="submitUpload()">
+        {{ uploading ? 'Uploading...' : 'Upload' }}
+      </button>
+    </div>
+  </div>
+</div>

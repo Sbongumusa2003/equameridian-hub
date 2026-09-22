@@ -1,0 +1,16 @@
+
+.header-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.import-panel { margin-bottom: 20px; }
+.import-steps { margin: 12px 0; padding-left: 20px; color: #4b5563; line-height: 1.5; }
+.import-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+.import-help {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+.import-secondary { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.import-created { color: #1a7f37; }
+.import-errors { color: #b42318; }

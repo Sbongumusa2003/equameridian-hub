@@ -1,0 +1,74 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Document Verification</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Review supplier and contractor documents. Approving a supplier's document activates their account.</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
+      <option value="Pending">Pending Review</option>
+      <option value="Accepted">Accepted</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+  </div>
+
+  <div class="alert alert--success" *ngIf="message">{{ message }}</div>
+  <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>DOCUMENT</th><th>TYPE</th><th>SUBMITTED BY</th>
+        <th>STATUS</th><th>UPLOADED</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading">
+        <td colspan="6" class="text-center">Loading...</td>
+      </tr>
+      <tr *ngFor="let doc of documents">
+        <td>{{ doc.docName }}</td>
+        <td>{{ doc.docTypeName }}</td>
+        <td>{{ doc.uploadedByName }}</td>
+        <td><app-status-badge [status]="doc.verificationStatus"></app-status-badge></td>
+        <td>{{ doc.uploadedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td class="action-cell">
+          <button class="btn btn--sm btn--outline" (click)="viewDocument(doc.docID)">View</button>
+          <ng-container *ngIf="doc.verificationStatus === 'Pending'">
+            <button class="btn btn--sm btn--primary"
+                    [disabled]="reviewingDocId === doc.docID"
+                    (click)="review(doc.docID, 'Accepted')">
+              Approve
+            </button>
+            <button class="btn btn--sm btn--danger-outline"
+                    [disabled]="reviewingDocId === doc.docID"
+                    (click)="review(doc.docID, 'Rejected')">
+              Reject
+            </button>
+          </ng-container>
+        </td>
+      </tr>
+      <tr *ngIf="!loading && documents.length === 0">
+        <td colspan="6" class="text-center">No documents found for this filter.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>
+      Showing
+      {{ documents.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }}
+      of {{ totalCount }} documents
+    </span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="page = page - 1; load()">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button *ngIf="page < totalPages" (click)="page = page + 1; load()">{{ page + 1 }}</button>
+      <button [disabled]="page >= totalPages" (click)="page = page + 1; load()">&#8250;</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,68 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Bookings</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>All bookings across the platform. Use "Generate Invoice" if an accepted quotation didn't produce one automatically.</p>
+  </div>
+</div>
+
+<div class="panel p-0">
+  <div class="filter-bar p-16">
+    <input type="text" placeholder="Search by listing, contractor or supplier..."
+           [(ngModel)]="search" (keyup.enter)="onSearch()" />
+    <button class="btn btn--outline" (click)="onSearch()">Search</button>
+  </div>
+
+  <div class="alert alert--success mx-16" *ngIf="generateMessage">{{ generateMessage }}</div>
+  <div class="alert alert--error mx-16" *ngIf="generateError">{{ generateError }}</div>
+
+  <div class="loading-state" *ngIf="loading">Loading bookings...</div>
+  <div class="empty-state" *ngIf="!loading && bookings.length === 0">No bookings yet.</div>
+
+  <table class="data-table" *ngIf="!loading && bookings.length > 0">
+    <thead>
+      <tr>
+        <th>Booking #</th>
+        <th>Listing</th>
+        <th>Contractor</th>
+        <th>Supplier</th>
+        <th>Booking Status</th>
+        <th>Payment Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let b of bookings">
+        <td><strong>#{{ b.bookingID }}</strong></td>
+        <td>{{ b.machinery }}</td>
+        <td>{{ b.contractorName }}</td>
+        <td>{{ b.supplierName }}</td>
+        <td><app-status-badge [status]="b.bookingStatus"></app-status-badge></td>
+        <td>
+          <app-status-badge *ngIf="b.paymentStatus" [status]="b.paymentStatus"></app-status-badge>
+          <span class="text-muted" *ngIf="!b.paymentStatus">No invoice</span>
+          <small *ngIf="b.invoiceNumber">{{ b.invoiceNumber }}</small>
+        </td>
+        <td>
+          <button class="btn btn--sm btn--primary"
+                  *ngIf="b.canGenerateInvoice"
+                  [disabled]="generatingId === b.bookingID"
+                  (click)="generateInvoice(b)">
+            {{ generatingId === b.bookingID ? 'Generating...' : 'Generate Invoice' }}
+          </button>
+          <span class="text-muted fs-12" *ngIf="!b.canGenerateInvoice && !b.invoiceNumber">Not yet eligible</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer" *ngIf="!loading && bookings.length > 0">
+    <span>{{ totalCount }} booking(s)</span>
+    <div class="pagination">
+      <button [disabled]="page === 1" (click)="goToPage(page - 1)">‹</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page === totalPages" (click)="goToPage(page + 1)">›</button>
+    </div>
+  </div>
+</div>

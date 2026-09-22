@@ -1,0 +1,108 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Book Now</h1>
+  </div>
+  <div class="page-header__sub">
+    <p *ngIf="listing">{{ listing.listingTitle }} — {{ listing.supplierName }}</p>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading listing...</div>
+
+<div class="page-layout" *ngIf="!loading && listing">
+  <div class="page-layout__main">
+
+    <div class="panel result-panel" *ngIf="added">
+      <div class="result-icon result-icon--success">✓</div>
+      <h2 class="detail-title">Added to Cart</h2>
+      <p class="result-copy">
+        {{ listing.listingTitle }} has been added to your cart at the published rate. You can add more
+        machinery before checking out, or go straight to your cart to review and pay.
+      </p>
+      <div class="action-btns mt-16">
+        <button class="btn btn--primary" (click)="goToCart()">Go to Cart</button>
+        <a class="btn btn--outline" [routerLink]="['/contractor/browse']">Keep Browsing</a>
+      </div>
+    </div>
+
+    <form class="form-panel" [formGroup]="form" (ngSubmit)="addToCart()" *ngIf="!added">
+      <div class="alert alert--success mb-8">
+        This listing is bookable straight away at its published rate — no quote needed. Add it to your
+        cart, then check out when you're ready.
+      </div>
+
+      <div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Rental Start Date <span class="required">*</span></label>
+          <input type="date" formControlName="startDate" [min]="minStartDateISO"
+                 [class.is-invalid]="startDateError" />
+          <div class="field-error" *ngIf="startDateError">{{ startDateError }}</div>
+        </div>
+        <div class="form-group">
+          <label>Rental End Date <span class="required">*</span></label>
+          <input type="date" formControlName="endDate" [min]="minStartDateISO"
+                 [class.is-invalid]="endDateError" />
+          <div class="field-error" *ngIf="endDateError">{{ endDateError }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Quantity <span class="required">*</span></label>
+        <input type="number" min="1" [max]="listing.unitsAvailable" formControlName="quantity"
+               [class.is-invalid]="quantityError" />
+        <small class="text-muted">{{ listing.unitsAvailable }} unit(s) available</small>
+        <div class="field-error" *ngIf="quantityError">{{ quantityError }}</div>
+      </div>
+
+      <div class="form-group" *ngIf="listing.pickupAvailable && listing.deliveryAvailable">
+        <label>Fulfilment Method <span class="required">*</span></label>
+        <select formControlName="fulfillmentMethod">
+          <option value="Supplier Delivery" *ngIf="listing.deliveryAvailable">Supplier Delivery</option>
+          <option value="Contractor Pickup" *ngIf="listing.pickupAvailable">Contractor Pickup</option>
+        </select>
+      </div>
+
+      <div class="form-group" *ngIf="!isPickup">
+        <label>Delivery Address <span class="required">*</span></label>
+        <textarea formControlName="deliveryAddress" placeholder="Street, suburb, city, province, postal code"
+                  [class.is-invalid]="deliveryAddressError"></textarea>
+        <div class="field-error" *ngIf="deliveryAddressError">{{ deliveryAddressError }}</div>
+      </div>
+
+      <div class="form-group" *ngIf="isPickup">
+        <label>Pickup Address</label>
+        <div class="alert alert--success">
+          {{ listing.location || 'Contact the supplier for exact pickup details.' }}
+        </div>
+        <small class="text-muted">
+          This is the supplier's listed location — you'll collect the machinery from here.
+        </small>
+      </div>
+
+      <div class="form-actions">
+        <a class="btn btn--ghost" [routerLink]="['/contractor/browse', listing.listingID]">Cancel</a>
+        <button type="submit" class="btn btn--primary" [disabled]="submitting">
+          {{ submitting ? 'Adding...' : 'Add to Cart' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="page-layout__aside" *ngIf="!added">
+    <div class="listing-card__price fs-24 block mb-4">
+      R {{ listing.dailyRateZAR | number }}<small>/day</small>
+    </div>
+    <p class="text-muted" *ngIf="listing.weeklyRateZAR">R {{ listing.weeklyRateZAR | number }}/week</p>
+
+    <div class="info-panel mt-16">
+      <h4>What happens next?</h4>
+      <ul>
+        <li>Your item is reserved at today's published rate — no negotiation needed.</li>
+        <li>A booking, invoice and lease agreement are created automatically at checkout.</li>
+        <li>Sign the lease agreement, then pay the invoice to confirm your booking.</li>
+      </ul>
+    </div>
+  </div>
+</div>

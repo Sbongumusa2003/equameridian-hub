@@ -1,0 +1,108 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Roles &amp; Permissions</h1>
+    </div>
+    <div class="page-header__sub">
+      <app-context-help topic="admin-roles"></app-context-help>
+      <p>Manage internal roles and what each one can access</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button class="btn btn--primary" (click)="openCreate()">+ Create Role</button>
+  </div>
+</div>
+
+<div class="alert alert--success" *ngIf="message">{{ message }}</div>
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+<div class="panel">
+  <table class="data-table">
+    <thead>
+      <tr><th>ROLE</th><th>DESCRIPTION</th><th>PERMISSIONS</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="4" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let r of roles">
+        <td><strong>{{ r.roleName }}</strong> <span *ngIf="r.isSystemRole" class="text-muted">(system)</span></td>
+        <td class="text-muted">{{ r.description || '—' }}</td>
+        <td>{{ r.permissionKeys.length }} permission(s)</td>
+        <td class="flex gap-8">
+          <button class="btn btn--sm btn--outline" (click)="openEdit(r)">Edit Permissions</button>
+          <button class="btn btn--sm btn--danger-outline" *ngIf="!r.isSystemRole" (click)="openDelete(r)">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="!loading && roles.length === 0">
+        <td colspan="4" class="text-center">No roles configured.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Edit permissions modal -->
+<div class="modal-overlay" *ngIf="editingRole" (click)="closeEdit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3 class="detail-title">Edit Permissions — {{ editingRole.roleName }}</h3>
+    <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+    <div class="permission-list">
+      <label *ngFor="let p of allPermissions" class="permission-item">
+        <input type="checkbox" [checked]="editPermissionKeys.has(p.permissionKey)" (change)="toggleEditPermission(p.permissionKey)" />
+        <div>
+          <strong>{{ p.permissionKey }}</strong>
+ <div class="text-muted fs-12" >{{ p.description }}</div>
+        </div>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--ghost" (click)="closeEdit()">Cancel</button>
+      <button class="btn btn--primary" [disabled]="saving" (click)="saveEdit()">
+        {{ saving ? 'Saving...' : 'Save Permissions' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Create role modal -->
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreate()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3 class="detail-title">Create Role</h3>
+    <div class="alert alert--error" *ngIf="createError">{{ createError }}</div>
+    <div class="form-group">
+      <label>Role Name <span class="required">*</span></label>
+      <input type="text" [(ngModel)]="createForm.roleName" placeholder="e.g. Support Agent" />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea rows="2" [(ngModel)]="createForm.description"></textarea>
+    </div>
+    <div class="permission-list">
+      <label *ngFor="let p of allPermissions" class="permission-item">
+        <input type="checkbox" [checked]="createPermissionKeys.has(p.permissionKey)" (change)="toggleCreatePermission(p.permissionKey)" />
+        <div>
+          <strong>{{ p.permissionKey }}</strong>
+ <div class="text-muted fs-12" >{{ p.description }}</div>
+        </div>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--ghost" (click)="closeCreate()">Cancel</button>
+      <button class="btn btn--primary" [disabled]="creating || !createForm.roleName.trim()" (click)="submitCreate()">
+        {{ creating ? 'Creating...' : 'Create Role' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirmation -->
+<div class="modal-overlay" *ngIf="deleteTarget" (click)="closeDelete()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3 class="detail-title">Delete Role</h3>
+    <p class="text-muted">Are you sure you want to delete <strong>{{ deleteTarget.roleName }}</strong>? This cannot be undone.</p>
+    <div class="form-actions">
+      <button class="btn btn--ghost" (click)="closeDelete()">Cancel</button>
+      <button class="btn btn--danger" [disabled]="deleting" (click)="confirmDelete()">
+        {{ deleting ? 'Deleting...' : 'Delete Role' }}
+      </button>
+    </div>
+  </div>
+</div>

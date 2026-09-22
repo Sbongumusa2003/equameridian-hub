@@ -1,0 +1,218 @@
+<div class="auth-page">
+  <div class="auth-card" [class.auth-card--wide]="isRegister">
+    <a routerLink="/" class="auth-back-home">
+      <span aria-hidden="true">←</span> Back to marketplace
+    </a>
+        <div class="auth-card__logo">
+      <img class="brand-logo brand-logo--auth" src="assets/brand/logo-mark.png" width="56" height="56" alt="EquaMeridian Holdings" />
+      <span class="logo-text">EquaMeridian Hub</span>
+    </div>
+
+    <div class="auth-tabs">
+      <button 
+        type="button"
+        class="auth-tab" 
+        [class.auth-tab--active]="isLogin"
+        (click)="switchMode('login')">
+        Sign In
+      </button>
+      <button 
+        type="button"
+        class="auth-tab" 
+        [class.auth-tab--active]="isRegister"
+        (click)="switchMode('register')">
+        Register
+      </button>
+    </div>
+
+    <div *ngIf="isLogin">
+      <h2 class="auth-card__title">Welcome back</h2>
+      <p class="auth-card__subtitle">Sign in to access your supplier dashboard</p>
+
+      <form [formGroup]="loginForm" (ngSubmit)="submitLogin()">
+        <div class="form-group">
+          <label>Email address <span class="required">*</span></label>
+          <input 
+            type="email" 
+            formControlName="email" 
+            placeholder="you@company.com"
+            [class.is-invalid]="loginEmailError" />
+          <div class="field-error" *ngIf="loginEmailError">{{ loginEmailError }}</div>
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label>Password <span class="required">*</span></label>
+            <a routerLink="/auth/forgot-password" class="link">Forgot password?</a>
+          </div>
+          <input 
+            type="password" 
+            formControlName="password" 
+            placeholder="••••••••"
+            [class.is-invalid]="loginPasswordError" />
+          <div class="field-error" *ngIf="loginPasswordError">{{ loginPasswordError }}</div>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="keepSigned" formControlName="keepMeSignedIn" />
+          <label for="keepSigned">Keep me signed in</label>
+        </div>
+
+        <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+        <button type="submit" class="btn btn--primary btn--full" [disabled]="loading">
+          {{ loading ? 'Signing in...' : 'Sign In' }}
+        </button>
+      </form>
+    </div>
+
+    <div *ngIf="isRegister">
+      <h2 class="auth-card__title">Create your supplier account</h2>
+      <p class="auth-card__subtitle">Fill in your details. Your account will be reviewed before activation.</p>
+
+      <div class="alert alert--success" *ngIf="success">
+        <strong>Account created successfully!</strong><br>
+        You'll receive an email once your account is activated by an administrator.
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" *ngIf="!success">
+        <div class="form-row">
+          <div class="form-group">
+            <label>First name <span class="required">*</span></label>
+            <input 
+              type="text" 
+              formControlName="firstName" 
+              placeholder="John"
+              [class.is-invalid]="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.invalid" />
+            <div class="field-error" *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.errors?.['required']">
+              First name is required.
+            </div>
+            <div class="field-error" *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.errors?.['nameHasDigits']">
+              Name must not contain digits.
+            </div>
+            <div class="field-error" *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.errors?.['invalidName']">
+              First name contains invalid characters.
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Last name <span class="required">*</span></label>
+            <input 
+              type="text" 
+              formControlName="lastName" 
+              placeholder="Smith"
+              [class.is-invalid]="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.invalid" />
+            <div class="field-error" *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.errors?.['required']">
+              Last name is required.
+            </div>
+            <div class="field-error" *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.errors?.['nameHasDigits']">
+              Name must not contain digits.
+            </div>
+            <div class="field-error" *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.errors?.['invalidName']">
+              Last name contains invalid characters.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Email address <span class="required">*</span></label>
+          <input 
+            type="email" 
+            formControlName="email" 
+            placeholder="john@company.com"
+            [class.is-invalid]="registerEmailError" />
+          <div class="field-error" *ngIf="registerEmailError">{{ registerEmailError }}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Company name <span class="required">*</span></label>
+          <input 
+            type="text" 
+            formControlName="companyName" 
+            placeholder="Acme Construction Supplies Ltd."
+            [class.is-invalid]="registerForm.get('companyName')?.touched && registerForm.get('companyName')?.invalid" />
+          <div class="field-error" *ngIf="registerForm.get('companyName')?.touched && registerForm.get('companyName')?.errors?.['required']">
+            Company name is required.
+          </div>
+          <div class="field-error" *ngIf="registerForm.get('companyName')?.touched && registerForm.get('companyName')?.errors?.['invalidCompany']">
+            Company name contains invalid characters.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Phone number <span class="required">*</span></label>
+          <input 
+            type="tel" 
+            formControlName="phone" 
+            placeholder="0XXXXXXXXX or +27XXXXXXXXX"
+            [class.is-invalid]="registerForm.get('phone')?.touched && registerForm.get('phone')?.invalid" />
+          <small class="hint">South African numbers only (10 digits): 0XXXXXXXXX or +27XXXXXXXXX</small>
+          <div class="field-error" *ngIf="registerForm.get('phone')?.touched && registerForm.get('phone')?.errors?.['required']">
+            Phone number is required.
+          </div>
+          <div class="field-error" *ngIf="registerForm.get('phone')?.touched && (registerForm.get('phone')?.errors?.['saPhone'] || registerForm.get('phone')?.errors?.['pattern'])">
+            Phone number must be a valid South African number with exactly 10 digits (0XXXXXXXXX or +27XXXXXXXXX).
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Password <span class="required">*</span></label>
+          <input 
+            type="password" 
+            formControlName="password" 
+            placeholder="Min. 8 characters"
+            [class.is-invalid]="passwordError" />
+          <small class="hint">Must include uppercase, number, and symbol.</small>
+          <div class="field-error" *ngIf="passwordError">{{ passwordError }}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Confirm password <span class="required">*</span></label>
+          <input 
+            type="password" 
+            formControlName="confirmPassword" 
+            placeholder="Repeat password"
+            [class.is-invalid]="confirmPasswordError" />
+          <div class="field-error" *ngIf="confirmPasswordError">{{ confirmPasswordError }}</div>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="terms" formControlName="agreeToTerms" />
+          <label for="terms">
+            I agree to the <a routerLink="/policies/terms" target="_blank" class="link">Terms of Service</a> and
+            <a routerLink="/policies/privacy" target="_blank" class="link">Privacy Policy</a> <span class="required">*</span>
+          </label>
+          <div class="field-error" *ngIf="registerForm.get('agreeToTerms')?.touched && registerForm.get('agreeToTerms')?.errors?.['required']">
+            You must agree to the terms and conditions.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Verification documents <span class="required">*</span></label>
+          <small class="hint">Upload at least one document (e.g. business registration certificate, tax clearance). Accepted formats: PDF, JPG, PNG. An admin will review these before your account is activated.</small>
+
+          <div class="doc-upload-row" *ngFor="let doc of documents; let i = index">
+            <select (change)="onDocTypeSelected($event, i)">
+              <option [value]="''" [selected]="doc.docTypeId === null">Select document type...</option>
+              <option *ngFor="let t of documentTypes" [value]="t.docTypeID" [selected]="doc.docTypeId === t.docTypeID">{{ t.typeName }}</option>
+            </select>
+            <span class="doc-upload-row__filename">{{ doc.file?.name || 'No file chosen' }}</span>
+            <label class="btn btn--outline btn--sm">
+              Choose file
+              <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event, i)" />
+            </label>
+            <button type="button" class="btn btn--ghost btn--sm" (click)="removeDocument(i)" *ngIf="documents.length > 1">Remove</button>
+          </div>
+
+          <button type="button" class="btn btn--outline btn--sm" (click)="addDocument()">+ Add another document</button>
+          <div class="field-error" *ngIf="documentsError">{{ documentsError }}</div>
+        </div>
+
+        <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+        <button type="submit" class="btn btn--primary btn--full" [disabled]="loading">
+          {{ loading ? 'Creating Account...' : 'Create Supplier Account' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

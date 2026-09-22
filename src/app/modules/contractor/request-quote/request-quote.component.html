@@ -1,0 +1,109 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Request a Quote</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="request-quote"></app-context-help>
+    <p *ngIf="listing">For {{ listing.listingTitle }} — {{ listing.supplierName }}</p>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading listing...</div>
+
+<div class="page-layout" *ngIf="!loading && listing">
+  <div class="page-layout__main">
+    <form class="form-panel" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="alert alert--error" *ngIf="errorMessage">
+        {{ errorMessage }}
+        <a *ngIf="needsDocumentApproval" routerLink="/account/documents" class="link">Upload your documents &rarr;</a>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Rental Start Date <span class="required">*</span></label>
+          <input type="date" formControlName="startDate" [min]="minStartDateISO"
+                 [class.is-invalid]="startDateError" />
+          <div class="field-error" *ngIf="startDateError">{{ startDateError }}</div>
+        </div>
+        <div class="form-group">
+          <label>Rental End Date <span class="required">*</span></label>
+          <input type="date" formControlName="endDate" [min]="minStartDateISO"
+                 [class.is-invalid]="endDateError" />
+          <div class="field-error" *ngIf="endDateError">{{ endDateError }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Quantity <span class="required">*</span></label>
+        <input type="number" min="1" [max]="listing.unitsAvailable" formControlName="quantity"
+               [class.is-invalid]="quantityError" />
+        <div class="field-error" *ngIf="quantityError">{{ quantityError }}</div>
+      </div>
+
+      <div class="form-group" *ngIf="listing.dryHireAvailable && listing.wetHireAvailable">
+        <label>Hire Type <span class="required">*</span></label>
+        <select formControlName="hireType">
+          <option value="Dry" *ngIf="listing.dryHireAvailable">Dry Hire (equipment only)</option>
+          <option value="Wet" *ngIf="listing.wetHireAvailable">Wet Hire (equipment + operator)</option>
+        </select>
+      </div>
+
+      <div class="form-group" *ngIf="listing.pickupAvailable && listing.deliveryAvailable">
+        <label>Fulfilment <span class="required">*</span></label>
+        <select formControlName="fulfillmentMethod">
+          <option value="Supplier Delivery" *ngIf="listing.deliveryAvailable">Supplier Delivery</option>
+          <option value="Contractor Pickup" *ngIf="listing.pickupAvailable">Contractor Pickup</option>
+        </select>
+      </div>
+
+      <div class="form-group" *ngIf="form.get('fulfillmentMethod')?.value === 'Supplier Delivery'">
+        <label>Delivery Address <span class="required">*</span></label>
+        <textarea formControlName="deliveryAddress" placeholder="Full delivery address for this rental"
+                  [class.is-invalid]="deliveryAddressError"></textarea>
+        <div class="field-error" *ngIf="deliveryAddressError">{{ deliveryAddressError }}</div>
+      </div>
+
+      <div class="form-group" *ngIf="form.get('fulfillmentMethod')?.value === 'Contractor Pickup'">
+        <label>Pickup Address</label>
+        <div class="alert alert--success">
+          {{ listing.location || 'Contact the supplier for exact pickup details.' }}
+        </div>
+        <small class="text-muted">
+          This is the supplier's listed location — you'll collect the machinery from here.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label>Special Requirements</label>
+        <textarea formControlName="specialRequirements" placeholder="Any special requirements for the supplier (optional)"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Preferred Contact Method <span class="required">*</span></label>
+        <select formControlName="preferredContact">
+          <option value="Email">Email</option>
+          <option value="Phone">Phone</option>
+          <option value="Both">Both</option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <a class="btn btn--ghost" [routerLink]="['/contractor/browse', listing.listingID]">Cancel</a>
+        <button type="submit" class="btn btn--primary" [disabled]="submitting">
+          {{ submitting ? 'Submitting...' : 'Submit Quote Request' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel">
+      <h4>What happens next?</h4>
+      <ul>
+        <li>The supplier will review your request.</li>
+        <li>You'll receive a quote with pricing and terms.</li>
+        <li>Accepting a quote automatically creates your booking, invoice and lease agreement.</li>
+      </ul>
+    </div>
+  </div>
+</div>

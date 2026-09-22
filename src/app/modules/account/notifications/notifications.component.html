@@ -1,0 +1,50 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Notifications</h1>
+    </div>
+    <div class="page-header__sub">
+      <p>{{ unreadCount }} unread</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <div class="flex gap-8">
+    <button class="btn btn--outline btn--sm" (click)="toggleUnreadOnly()">
+      {{ unreadOnly ? 'Show All' : 'Show Unread Only' }}
+    </button>
+    <button class="btn btn--primary btn--sm" (click)="markAllRead()" [disabled]="unreadCount === 0">Mark all as read</button>
+  </div>
+  </div>
+</div>
+
+<div class="panel">
+  <table class="data-table">
+    <thead>
+      <tr><th>TYPE</th><th>MESSAGE</th><th>RECEIVED</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="4" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let n of notifications" [class.text-muted]="n.isRead" (click)="markRead(n)" class="cursor-pointer">
+        <td><strong [style.fontWeight]="n.isRead ? 400 : 700">{{ n.type }}</strong></td>
+        <td>
+          <div [style.fontWeight]="n.isRead ? 400 : 600">{{ n.title }}</div>
+          <div class="text-muted fs-13">{{ n.body }}</div>
+        </td>
+        <td>{{ n.createdDate | date:'dd MMM yyyy HH:mm':'Africa/Johannesburg' }}</td>
+        <td><span *ngIf="!n.isRead" class="new-pill">New</span></td>
+      </tr>
+      <tr *ngIf="!loading && notifications.length === 0">
+        <td colspan="4" class="text-center">No notifications.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Showing {{ notifications.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }}</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>

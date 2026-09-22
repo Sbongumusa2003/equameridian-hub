@@ -1,0 +1,67 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Compare Quotations</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Side-by-side comparison of your selected quotations.</p>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+<div class="alert alert--warning" *ngIf="warning">{{ warning }}</div>
+
+<div class="loading-state" *ngIf="loading">Loading comparison...</div>
+<div class="empty-state" *ngIf="!loading && quotations.length === 0">
+  Select at least 2 quotations from your quotations list to compare them here.
+</div>
+
+<div class="compare-table" *ngIf="!loading && quotations.length > 0">
+  <table>
+    <thead>
+      <tr>
+        <th class="spec-col"></th>
+        <th *ngFor="let q of quotations">
+          <div class="compare-header">
+            <strong>{{ q.listingTitle }}</strong>
+            <small>{{ q.supplierCompany }}</small>
+            <span class="avail-badge">{{ q.status }}</span>
+          </div>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let spec of specs">
+        <td class="spec-label">{{ specLabels[spec] }}</td>
+        <td *ngFor="let q of quotations">{{ getValue(q, spec) }}</td>
+      </tr>
+      <tr>
+        <td class="spec-label">DAILY RATE</td>
+        <td *ngFor="let q of quotations">{{ q.dailyRateZAR ? ('R ' + (q.dailyRateZAR | number)) : '—' }}</td>
+      </tr>
+      <tr>
+        <td class="spec-label">RENTAL PERIOD</td>
+        <td *ngFor="let q of quotations">
+          {{ q.rentalStartDate | date:'shortDate' }} – {{ q.rentalEndDate | date:'shortDate' }}
+          ({{ q.rentalDurationDays }} days)
+        </td>
+      </tr>
+      <tr>
+        <td class="spec-label">ESTIMATED TOTAL</td>
+        <td *ngFor="let q of quotations">
+          <span class="compare-price">R {{ q.estimatedTotal | number }}</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="spec-label"></td>
+        <td *ngFor="let q of quotations">
+          <button class="btn btn--primary btn--sm" *ngIf="q.canAccept"
+                  [disabled]="processingId === q.quotationID"
+                  (click)="accept(q)">
+            {{ processingId === q.quotationID ? 'Processing...' : 'Accept' }}
+          </button>
+          <span class="add-slot" *ngIf="!q.canAccept">Not actionable</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

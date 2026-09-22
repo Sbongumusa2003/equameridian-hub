@@ -1,0 +1,251 @@
+.report-chart {
+  background: linear-gradient(180deg, #fff 0%, #fdfcfb 100%);
+  border: 1px solid var(--color-border, #e8e6e1);
+  border-radius: 14px;
+  padding: 1.15rem 1.2rem 1rem;
+  margin-bottom: 0;
+  box-shadow: 0 1px 3px rgba(26, 26, 26, 0.05);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(26, 26, 26, 0.08);
+  }
+
+  &__head {
+    margin-bottom: 0.7rem;
+  }
+
+  &__title {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--color-text, #1a1a1a);
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+
+    &::before {
+      content: '';
+      width: 4px;
+      height: 1em;
+      border-radius: 2px;
+      background: var(--color-primary, #c9a227);
+      flex-shrink: 0;
+    }
+  }
+
+  &__subtitle {
+    margin: 0.15rem 0 0 0.85rem;
+    font-size: 0.72rem;
+    color: var(--color-text-muted, #888);
+  }
+
+  &__svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    flex: 1;
+  }
+
+  &--donut {
+    .report-chart__donut-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  &__svg--donut {
+    width: 150px;
+    height: 150px;
+    flex-shrink: 0;
+    margin: 0 auto;
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1.1rem;
+    padding: 0.65rem 0 0.15rem;
+    justify-content: center;
+    border-top: 1px solid #f0eeea;
+    margin-top: 0.5rem;
+  }
+}
+
+.donut-track {
+  stroke: #f2efea;
+}
+
+.donut-segment {
+  /* Do NOT set stroke-dashoffset here — it must come from [attr.stroke-dashoffset]
+     so each segment starts at the correct arc position (legend colours stay aligned). */
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.donut-center-value {
+  font-size: 21px;
+  font-weight: 800;
+  fill: var(--color-text, #1a1a1a);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+
+.donut-center-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  fill: var(--color-text-muted, #888);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+
+.donut-legend {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 10px 1fr auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.76rem;
+    padding: 0.15rem 0;
+
+    &--empty {
+      display: block;
+      color: var(--color-text-muted, #888);
+      font-size: 0.78rem;
+      padding: 0.5rem 0;
+    }
+  }
+
+  &__swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+  }
+
+  &__label {
+    color: var(--color-text-secondary, #555);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__value {
+    color: var(--color-text-muted, #888);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__pct {
+    color: var(--color-text, #1a1a1a);
+    font-weight: 700;
+    min-width: 2.6rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.grid-line {
+  stroke: #f0eeea;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.axis {
+  stroke: #ddd;
+  stroke-width: 1;
+}
+
+.tick-label {
+  font-size: 10px;
+  fill: #888;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+
+.cat-label,
+.h-label {
+  font-size: 11px;
+  font-weight: 500;
+  fill: var(--color-text, #2a2a2a);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+
+.h-value {
+  font-size: 10px;
+  fill: #333;
+  font-weight: 600;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+
+.bar {
+  transition: opacity 0.15s ease, filter 0.15s ease;
+  transform-origin: bottom;
+  animation: bar-grow 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  &:hover {
+    opacity: 0.92;
+    filter: brightness(1.05);
+  }
+}
+
+@keyframes bar-grow {
+  from { transform: scaleY(0.35); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+.area-fill {
+  animation: fade-in 0.6s ease both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.line-path {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.08));
+}
+
+.line-dot {
+  stroke: #fff;
+  stroke-width: 1.5;
+  transition: r 0.15s ease;
+
+  &:hover {
+    r: 5;
+  }
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #444;
+}
+
+.legend-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+}

@@ -1,0 +1,86 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Messages</h1>
+    </div>
+    <div class="page-header__sub">
+      <p>Conversations with suppliers and contractors</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button class="btn btn--primary" (click)="startNewMessage()">+ New Message</button>
+  </div>
+</div>
+
+<div class="panel" *ngIf="showNewMessage">
+  <h3 class="panel__title">New Message</h3>
+  <div class="alert alert--error" *ngIf="sendError">{{ sendError }}</div>
+  <div class="form-row">
+    <div class="dropdown-wrapper">
+      <label>Recipient</label>
+      <input
+        type="text"
+        [ngModel]="newRecipientQuery"
+        (ngModelChange)="onRecipientQueryChange($any($event))"
+        (focus)="newRecipientQuery.trim().length >= 2 && (showRecipientDropdown = true)"
+        (blur)="hideRecipientDropdownSoon()"
+        placeholder="Start typing a name..."
+        autocomplete="off" />
+      <div class="dropdown-menu dropdown-menu--scroll" *ngIf="showRecipientDropdown">
+        <div class="dropdown-empty" *ngIf="recipientSearching">Searching...</div>
+        <div class="dropdown-empty" *ngIf="!recipientSearching && recipientResults.length === 0">
+          No matching users found.
+        </div>
+        <div class="dropdown-item" *ngFor="let u of recipientResults" (mousedown)="selectRecipient(u)">
+          <span>
+            <strong>{{ u.fullName }}</strong>
+            <span class="text-muted"> &middot; {{ u.role }}<ng-container *ngIf="u.companyName"> &middot; {{ u.companyName }}</ng-container></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-12">
+    <label>Message</label>
+    <textarea rows="4" [(ngModel)]="newBody" placeholder="Type your message..."></textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn--outline" (click)="cancelNewMessage()">Cancel</button>
+    <button class="btn btn--primary" [disabled]="sending || !newRecipientId || !newBody.trim()" (click)="sendNewMessage()">
+      {{ sending ? 'Sending...' : 'Send' }}
+    </button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <input type="text" placeholder="Search conversations..." class="search-input" (input)="onSearch($any($event.target).value)" />
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>PARTICIPANT</th><th>LAST MESSAGE</th><th>DATE</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="4" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let t of threads" (click)="openThread(t.threadID)" class="cursor-pointer">
+        <td><strong [style.fontWeight]="t.unreadCount > 0 ? 700 : 400">{{ t.otherParticipantName }}</strong></td>
+        <td class="text-muted">{{ t.messagePreview }}</td>
+        <td>{{ t.lastActivityDate | date:'short' }}</td>
+        <td><span class="badge" *ngIf="t.unreadCount > 0">{{ t.unreadCount }}</span></td>
+      </tr>
+      <tr *ngIf="!loading && threads.length === 0">
+        <td colspan="4" class="text-center">No conversations yet.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Showing {{ threads.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }}</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>

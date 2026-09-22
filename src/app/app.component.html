@@ -1,0 +1,15 @@
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<router-outlet></router-outlet>
+
+<div class="idle-overlay" *ngIf="warning.visible" role="alertdialog" aria-live="assertive" aria-modal="true">
+  <div class="idle-dialog">
+    <h3>Still there?</h3>
+    <p>
+      You will be signed out in
+      <strong>{{ warning.secondsLeft }}</strong>
+      second{{ warning.secondsLeft === 1 ? '' : 's' }} because of inactivity.
+    </p>
+    <button type="button" class="btn btn--primary" (click)="staySignedIn()">Stay signed in</button>
+  </div>
+</div>

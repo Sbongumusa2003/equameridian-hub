@@ -1,0 +1,77 @@
+<div class="doc-widget">
+  <div class="doc-widget__checklist" *ngIf="requiredTypes.length">
+    <span class="doc-widget__checklist-label">Required documents:</span>
+    <span
+      class="doc-chip"
+      *ngFor="let t of requiredTypes"
+      [class.doc-chip--done]="isTypeCovered(t.docTypeID)">
+      <span class="doc-chip__icon">{{ isTypeCovered(t.docTypeID) ? '✓' : '' }}</span>
+      {{ t.typeName }}
+    </span>
+  </div>
+
+  <div
+    class="doc-upload-row"
+    *ngFor="let row of rows; let i = index"
+    [class.doc-upload-row--drag]="dragActiveIndex === i"
+    [class.doc-upload-row--error]="row.error"
+    (dragover)="onRowDragOver($event, i)"
+    (dragleave)="onRowDragLeave(i)"
+    (drop)="onRowDrop($event, i)">
+
+    <div class="doc-upload-row__preview" *ngIf="row.previewUrl">
+      <img [src]="row.previewUrl" alt="Preview" />
+    </div>
+    <div class="doc-upload-row__preview doc-upload-row__preview--icon" *ngIf="row.file && !row.previewUrl">
+      PDF
+    </div>
+
+    <div class="doc-upload-row__main">
+      <select (change)="onDocTypeSelected($event, i)" [disabled]="disabled">
+        <option [value]="''" [selected]="row.docTypeId === null">Select document type...</option>
+        <option
+          *ngFor="let t of availableTypesFor(i)"
+          [value]="t.docTypeID"
+          [selected]="row.docTypeId === t.docTypeID">
+          {{ t.typeName }}{{ t.isRequired ? ' (required)' : '' }}
+        </option>
+      </select>
+
+      <div class="doc-upload-row__file-info" *ngIf="row.file">
+        <span class="doc-upload-row__filename">{{ row.file.name }}</span>
+        <span class="doc-upload-row__filesize">{{ formatSize(row.file.size) }}</span>
+      </div>
+      <div class="field-error" *ngIf="row.error">{{ row.error }}</div>
+      <div class="field-error" *ngIf="submitted && !row.file && row.docTypeId !== null">
+        Please choose a file for this document type.
+      </div>
+    </div>
+
+    <label class="btn btn--outline btn--sm" [class.btn--disabled]="disabled">
+      {{ row.file ? 'Replace' : 'Choose file' }}
+      <input type="file" hidden accept=".pdf,.jpg,.jpeg,.png" [disabled]="disabled" (change)="onFileSelected($event, i)" />
+    </label>
+    <button type="button" class="btn btn--ghost btn--sm" [disabled]="disabled" (click)="removeRow(i)" *ngIf="rows.length > 1">
+      Remove
+    </button>
+  </div>
+
+  <div
+    class="upload-zone"
+    [class.upload-zone--drag]="dragActiveNewRow"
+    [class.upload-zone--disabled]="disabled"
+    (dragover)="onNewRowDragOver($event)"
+    (dragleave)="onNewRowDragLeave()"
+    (drop)="onNewRowDrop($event)"
+    (click)="addRow()">
+    <div>Drag &amp; drop files here, or click to add another document</div>
+    <small>PDF, JPG, or PNG — max 10MB per file</small>
+  </div>
+
+  <div class="doc-widget__progress" *ngIf="progress !== null">
+    <div class="doc-widget__progress-bar">
+      <div class="doc-widget__progress-fill" [style.width.%]="progress"></div>
+    </div>
+    <span class="doc-widget__progress-label">Uploading… {{ progress }}%</span>
+  </div>
+</div>

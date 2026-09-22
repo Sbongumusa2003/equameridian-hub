@@ -1,0 +1,371 @@
+<div class="breadcrumb">
+  <a routerLink="/transactions/bookings">← Bookings</a>
+  <span>›</span>
+
+  <a routerLink="/transactions/bookings">Bookings &amp; Deliveries</a>
+  <span>›</span>
+  <span>Booking #{{ bookingId }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading booking...</div>
+<div class="empty-state" *ngIf="!loading && !detail">Booking not found.</div>
+
+<div class="page-layout" *ngIf="!loading && detail">
+  <div class="page-layout__main">
+    <div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
+
+    <div class="panel">
+      <div class="listing-card__header">
+        <h3 class="detail-title">{{ detail.machinery }}</h3>
+        <app-status-badge [status]="detail.bookingStatus"></app-status-badge>
+      </div>
+      <div class="info-grid mt-16" >
+        <div><small>Supplier</small><span>{{ detail.supplierName }}</span></div>
+        <div><small>Contractor</small><span>{{ detail.contractorName }}</span></div>
+        <div><small>Rental Period</small><span>{{ detail.rentalStartDate | date:'dd MMM yyyy':'Africa/Johannesburg' }} – {{ detail.rentalEndDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</span></div>
+      </div>
+      <div class="action-btns mt-16" *ngIf="canCancelBooking && !showCancelForm">
+        <button class="btn btn--sm btn--danger-outline" (click)="showCancelForm = true">Cancel Booking</button>
+      </div>
+      <div class="alert alert--warning mt-16" *ngIf="cancelBlockedByDelivery">
+        This booking can no longer be cancelled — machinery prep, delivery, or handover has already started.
+        If there is a problem,
+        <button type="button" class="link" (click)="showDisputeForm = true">raise a dispute</button>
+        instead.
+      </div>
+    </div>
+
+    <div class="panel" *ngIf="canCancelBooking && showCancelForm">
+      <h4>Cancel This Booking</h4>
+      <p class="text-muted">
+        Cancellations made less than 48 hours before the rental start date may be subject to a
+        cancellation fee per the lease agreement's cancellation policy.
+      </p>
+      <div class="alert alert--error" *ngIf="cancelError">{{ cancelError }}</div>
+      <div class="form-group">
+        <label>Reason <span class="required">*</span></label>
+        <textarea [(ngModel)]="cancelReason" name="cancelReason" placeholder="Let the other party know why you're cancelling"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn--ghost" (click)="showCancelForm = false; cancelError = ''">Never Mind</button>
+        <button type="button" class="btn btn--danger" [disabled]="cancelling" (click)="cancelBooking()">
+          {{ cancelling ? 'Cancelling...' : 'Confirm Cancellation' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="panel tracker-panel" *ngIf="tracking && !tracking.isCancelled">
+      <div class="tracker">
+        <ng-container *ngFor="let stage of tracking.stages; let last = last">
+          <div class="tracker__step"
+               [class.tracker__step--complete]="stage.isComplete"
+               [class.tracker__step--current]="stage.isCurrent">
+            <div class="tracker__icon" [title]="stage.label">
+              <span *ngIf="stage.isComplete && !stage.isCurrent">✓</span>
+              <span *ngIf="!stage.isComplete || stage.isCurrent">{{ trackingIcon(stage.stage) }}</span>
+            </div>
+            <div class="tracker__label">{{ stage.label }}</div>
+            <div class="tracker__when" *ngIf="stage.timestamp">{{ stage.timestamp | date:'dd MMM HH:mm':'Africa/Johannesburg' }}</div>
+            <div class="tracker__when tracker__when--pending" *ngIf="!stage.timestamp">Pending</div>
+          </div>
+          <div class="tracker__line" *ngIf="!last" [class.tracker__line--complete]="stage.isComplete"></div>
+        </ng-container>
+      </div>
+      <h3 class="tracker__headline">{{ trackingHeadline }}</h3>
+      <p class="tracker__subtext" *ngIf="trackingSubtext">{{ trackingSubtext }}</p>
+    </div>
+
+    <div class="panel tracker-panel tracker-panel--cancelled" *ngIf="tracking && tracking.isCancelled">
+      <div class="tracker__headline">Booking Cancelled</div>
+      <p class="tracker__subtext">This booking was cancelled and is no longer being tracked for pickup, delivery, or return.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel__title">Delivery</div>
+      <div class="info-row"><span>Delivery Status</span><app-status-badge [status]="displayDeliveryStatus"></app-status-badge></div>
+      <div class="info-row"><span>Delivery Method</span><strong>{{ displayDeliveryMethod }}</strong></div>
+      <div class="info-row" *ngIf="detail.deliveryDate"><span>Delivery Date</span><strong>{{ detail.deliveryDate | date:'dd MMM yyyy HH:mm':'Africa/Johannesburg' }}</strong></div>
+
+      <div class="info-row" *ngIf="!editingAddress">
+        <span>Delivery Address</span>
+        <strong>{{ detail.deliveryAddress }}</strong>
+      </div>
+
+      <div class="form-group mt-14" *ngIf="editingAddress">
+        <label>New Delivery Address</label>
+        <textarea [(ngModel)]="newAddress"></textarea>
+        <div class="form-actions">
+          <button class="btn btn--ghost" (click)="editingAddress = false">Cancel</button>
+          <button class="btn btn--primary" [disabled]="processing" (click)="saveAddress()">Save Address</button>
+        </div>
+      </div>
+
+      <div class="delivery-actions">
+        <button class="btn btn--outline btn--sm" *ngIf="canUpdateAddress && !editingAddress" (click)="editingAddress = true">
+          Update Address
+        </button>
+        <button class="btn btn--primary btn--sm" *ngIf="canMarkReadyForPickup"
+                [disabled]="processing" (click)="markReadyForPickup()">
+          {{ markReadyButtonLabel }}
+        </button>
+        <div class="handover-box" *ngIf="canConfirmDelivery">
+          <div class="form-group">
+            <label>Handover condition notes (optional)</label>
+            <textarea rows="3" [(ngModel)]="handoverNotes" name="handoverNotes"
+                      placeholder="Condition at receipt, hours, visible damage..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Outcome</label>
+            <select [(ngModel)]="handoverOutcome" name="handoverOutcome">
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+            </select>
+          </div>
+          <button class="btn btn--primary btn--sm" [disabled]="processing" (click)="confirmDelivery()">
+            Confirm Delivery
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" *ngIf="paymentStatus">
+      <div class="panel__title">Payment Status</div>
+      <div class="info-row"><span>Status</span><app-status-badge [status]="displayPaymentStatus"></app-status-badge></div>
+      <div class="info-row"><span>Amount Due</span><strong>R{{ paymentStatus.amountDue | number:'1.2-2' }}</strong></div>
+      <div class="info-row"><span>Amount Paid</span><strong>R{{ paymentStatus.amountPaid | number:'1.2-2' }}</strong></div>
+      <div class="info-row" *ngIf="paymentStatus.gatewayReference">
+        <span>Gateway Reference</span><strong>{{ paymentStatus.gatewayReference }}</strong>
+      </div>
+    </div>
+    <div class="panel" *ngIf="paymentStatusLoading && !paymentStatus">
+      <div class="panel__title">Payment Status</div>
+      <div class="loading-state">Loading payment status...</div>
+    </div>
+
+    <div class="panel" *ngIf="canRequestReturn">
+      <div class="panel__title">Request Return</div>
+      <button class="btn btn--outline" *ngIf="!showReturnForm" (click)="showReturnForm = true">Request Return</button>
+
+      <form *ngIf="showReturnForm" #returnFormRef="ngForm" (ngSubmit)="returnFormRef.form.valid && submitReturnRequest()">
+        <div class="form-group">
+          <label>Return Reason <span class="required">*</span></label>
+          <select [(ngModel)]="returnForm.returnReason" name="returnReason" required
+                  #returnReasonRef="ngModel"
+                  [class.is-invalid]="returnReasonRef.touched && returnReasonRef.invalid">
+            <option value="" disabled>Select a reason...</option>
+            <option *ngFor="let reason of returnReasons" [value]="reason">{{ reason }}</option>
+          </select>
+          <div class="field-error" *ngIf="returnReasonRef.touched && returnReasonRef.invalid">
+            Please select a return reason.
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Preferred Pickup Date <span class="required">*</span></label>
+            <input type="date" [(ngModel)]="returnForm.preferredPickupDate" name="preferredPickupDate" required
+                   #pickupDateRef="ngModel"
+                   [class.is-invalid]="pickupDateRef.touched && pickupDateRef.invalid" />
+            <div class="field-error" *ngIf="pickupDateRef.touched && pickupDateRef.invalid">
+              Preferred pickup date is required.
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Pickup Time Window <span class="required">*</span></label>
+            <select [(ngModel)]="returnForm.pickupTimeWindow" name="pickupTimeWindow" required
+                    #pickupWindowRef="ngModel"
+                    [class.is-invalid]="pickupWindowRef.touched && pickupWindowRef.invalid">
+              <option value="" disabled>Select a time window...</option>
+              <option *ngFor="let window of pickupTimeWindows" [value]="window">{{ window }}</option>
+            </select>
+            <div class="field-error" *ngIf="pickupWindowRef.touched && pickupWindowRef.invalid">
+              Please select a pickup time window.
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Pickup Location <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="returnForm.pickupLocation" name="pickupLocation" required
+                 #pickupLocationRef="ngModel"
+                 [class.is-invalid]="pickupLocationRef.touched && pickupLocationRef.invalid" />
+          <div class="field-error" *ngIf="pickupLocationRef.touched && pickupLocationRef.invalid">
+            Pickup location is required.
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea [(ngModel)]="returnForm.notes" name="notes"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" (click)="showReturnForm = false">Cancel</button>
+          <button type="submit" class="btn btn--primary" [disabled]="processing || returnFormRef.form.invalid">Submit Return Request</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel" *ngIf="canMarkReadyForReturnPickup">
+      <div class="panel__title">Return pickup</div>
+      <p class="panel__hint">Mark the machinery ready when the contractor has prepared it for return collection.</p>
+      <button class="btn btn--primary btn--sm" [disabled]="processing" (click)="markReadyForReturnPickup()">
+        Mark Ready for Return Pickup
+      </button>
+    </div>
+
+    <div class="panel" *ngIf="canConfirmReturn">
+      <div class="panel__title">Confirm Return</div>
+      <button class="btn btn--outline" *ngIf="!showConfirmReturnForm" (click)="showConfirmReturnForm = true">Confirm Return</button>
+
+      <form *ngIf="showConfirmReturnForm" #confirmReturnFormRef="ngForm" (ngSubmit)="confirmReturnFormRef.form.valid && submitConfirmReturn()">
+        <div class="form-group">
+          <label>Condition on Return <span class="required">*</span></label>
+          <select [(ngModel)]="confirmReturnForm.condition" name="condition" required
+                  #conditionRef="ngModel"
+                  [class.is-invalid]="conditionRef.touched && conditionRef.invalid">
+            <option value="">Select condition...</option>
+            <option value="Good">Good</option>
+            <option value="Minor Damage">Minor Damage</option>
+            <option value="Major Damage">Major Damage</option>
+          </select>
+          <div class="field-error" *ngIf="conditionRef.touched && conditionRef.invalid">
+            Please select the condition on return.
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Inspection Notes <span class="required">*</span></label>
+          <textarea [(ngModel)]="confirmReturnForm.inspectionNotes" name="inspectionNotes" required
+                    #inspectionNotesRef="ngModel"
+                    [class.is-invalid]="inspectionNotesRef.touched && inspectionNotesRef.invalid"></textarea>
+          <div class="field-error" *ngIf="inspectionNotesRef.touched && inspectionNotesRef.invalid">
+            Inspection notes are required.
+          </div>
+        </div>
+        <div class="form-group" *ngIf="confirmReturnForm.condition && confirmReturnForm.condition !== 'Good'">
+          <label>Damage Description</label>
+          <textarea [(ngModel)]="confirmReturnForm.damageDescription" name="damageDescription"></textarea>
+        </div>
+        <div class="form-group" *ngIf="confirmReturnForm.condition && confirmReturnForm.condition !== 'Good'">
+          <label>Estimated Repair Cost (ZAR)</label>
+          <input type="number" step="0.01" [(ngModel)]="confirmReturnForm.estimatedRepairCost" name="estimatedRepairCost" />
+        </div>
+        <div class="form-group">
+          <label>Photo Evidence (JPG/PNG)</label>
+          <input type="file" accept="image/jpeg,image/png" multiple (change)="onPhotosSelected($event)" />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" (click)="showConfirmReturnForm = false">Cancel</button>
+          <button type="submit" class="btn btn--primary" [disabled]="processing || confirmReturnFormRef.form.invalid">Confirm Return</button>
+        </div>
+      </form>
+    </div>
+    <div class="panel" *ngIf="canRaiseDispute">
+      <div class="panel__title">Raise a Dispute</div>
+      <div class="alert alert--success" *ngIf="disputeSuccess">{{ disputeSuccess }}</div>
+      <button class="btn btn--outline" *ngIf="!showDisputeForm && !disputeSuccess" (click)="showDisputeForm = true">Raise a Dispute</button>
+
+      <form *ngIf="showDisputeForm" #disputeFormRef="ngForm" (ngSubmit)="disputeFormRef.form.valid && submitDispute()">
+        <div class="alert alert--error" *ngIf="disputeError">{{ disputeError }}</div>
+        <div class="form-group">
+          <label>Category <span class="required">*</span></label>
+          <select [(ngModel)]="disputeForm.disputeCategory" name="disputeCategory" required>
+            <option value="">Select a category...</option>
+            <option *ngFor="let c of disputeCategories" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Description <span class="required">*</span></label>
+          <textarea [(ngModel)]="disputeForm.description" name="description" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Desired Resolution <span class="required">*</span></label>
+          <textarea [(ngModel)]="disputeForm.desiredResolution" name="desiredResolution" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Supporting Evidence (JPG/PNG/PDF)</label>
+          <input type="file" accept="image/jpeg,image/png,application/pdf" multiple (change)="onEvidenceSelected($event)" />
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" (click)="showDisputeForm = false">Cancel</button>
+          <button type="submit" class="btn btn--primary" [disabled]="raisingDispute || disputeFormRef.form.invalid">
+            {{ raisingDispute ? 'Submitting...' : 'Submit Dispute' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel" *ngIf="!canRaiseDispute && (isContractor || isSupplier) && !!detail">
+      <div class="panel__title">Disputes</div>
+      <p class="text-muted fs-12">
+        Already raised a dispute for this booking, or want to check on one? Visit
+        <a routerLink="/transactions/disputes" class="link">My Disputes</a> to see its status —
+        only one dispute can be open per booking at a time.
+      </p>
+    </div>
+
+    <div class="panel" *ngIf="canReview">
+      <div class="panel__title">Write a Review</div>
+      <div class="alert alert--success" *ngIf="reviewSubmitted">
+        Thanks — your review has been submitted. You can manage it from your reviews list.
+      </div>
+      <button class="btn btn--outline" *ngIf="!showReviewForm && !reviewSubmitted" (click)="showReviewForm = true">
+        Write a Review
+      </button>
+
+      <form *ngIf="showReviewForm" #reviewFormRef="ngForm" (ngSubmit)="reviewFormRef.form.valid && submitReview()">
+        <div class="alert alert--error" *ngIf="reviewError">{{ reviewError }}</div>
+
+        <div class="form-group">
+          <label>Overall Rating <span class="required">*</span></label>
+          <select [(ngModel)]="reviewForm.overallRating" name="overallRating" required>
+            <option *ngFor="let n of [1,2,3,4,5]" [ngValue]="n">{{ n }} star{{ n === 1 ? '' : 's' }}</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngFor="let aspect of reviewAspects | keyvalue">
+          <label>{{ reviewAspectLabels[aspect.value] || aspect.value }} rating</label>
+          <select [(ngModel)]="reviewForm.aspectRatings[aspect.value]" [name]="'aspect_' + aspect.value">
+            <option *ngFor="let n of [1,2,3,4,5]" [ngValue]="n">{{ n }} star{{ n === 1 ? '' : 's' }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Title <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="reviewForm.title" name="title" maxlength="150" required />
+        </div>
+
+        <div class="form-group">
+          <label>Your Review <span class="required">*</span></label>
+          <textarea [(ngModel)]="reviewForm.reviewText" name="reviewText" maxlength="500" required></textarea>
+        </div>
+
+        <div class="form-group form-group--checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="reviewForm.confirmedGenuine" name="confirmedGenuine" />
+            This review reflects my genuine experience with this booking.
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" (click)="showReviewForm = false">Cancel</button>
+          <button type="submit" class="btn btn--primary" [disabled]="submittingReview || reviewFormRef.form.invalid">
+            {{ submittingReview ? 'Submitting...' : 'Submit Review' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel">
+      <h4>Related</h4>
+      <button class="quick-action" [disabled]="downloadingCalendar" (click)="downloadCalendar()">
+        {{ downloadingCalendar ? 'Preparing...' : '📅 Add to Calendar (.ics)' }}
+      </button>
+      <a class="quick-action" *ngIf="otherPartyId" [routerLink]="['/account/messages']"
+         [queryParams]="{ recipientId: otherPartyId, name: otherPartyName }">
+        Message {{ isSupplier ? 'contractor' : 'supplier' }}
+      </a>
+      <a class="quick-action" routerLink="/transactions/invoices">View Invoices</a>
+      <a class="quick-action" routerLink="/transactions/lease-agreements">View Lease Agreements</a>
+    </div>
+  </div>
+</div>

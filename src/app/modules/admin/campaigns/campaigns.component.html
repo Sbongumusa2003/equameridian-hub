@@ -1,0 +1,77 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Marketing Campaigns</h1>
+    </div>
+    <div class="page-header__sub">
+      <app-context-help topic="campaigns"></app-context-help>
+      <p>Manage banners, discount codes and featured listing promotions</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <a class="btn btn--primary" routerLink="/admin/campaigns/create">+ New Campaign</a>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <input type="text" placeholder="Search campaigns..."
+           class="search-input" (input)="onSearch($any($event.target).value)" />
+    <select [(ngModel)]="typeFilter" (change)="page = 1; load()">
+      <option value="">All Types</option>
+      <option *ngFor="let t of campaignTypes" [value]="t">{{ t }}</option>
+    </select>
+    <select [(ngModel)]="statusFilter" (change)="page = 1; load()">
+      <option value="">All Statuses</option>
+      <option *ngFor="let s of campaignStatuses" [value]="s">{{ s }}</option>
+    </select>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>CAMPAIGN</th><th>TYPE</th><th>CODE / %</th><th>AUDIENCE</th>
+        <th>DATES</th><th>STATUS</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="7" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let c of campaigns">
+        <td><strong>{{ c.name }}</strong></td>
+        <td>{{ c.type }}</td>
+        <td>
+          <span *ngIf="c.discountCode"><strong>{{ c.discountCode }}</strong> · {{ c.discountValue }}%</span>
+          <span *ngIf="!c.discountCode">—</span>
+        </td>
+        <td>{{ c.audience }}</td>
+        <td>{{ c.startDate | date:'dd MMM yyyy':'Africa/Johannesburg' }} &ndash; {{ c.endDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td><app-status-badge [status]="c.status"></app-status-badge></td>
+        <td class="action-cell">
+          <a class="btn btn--sm btn--outline" [routerLink]="['/admin/campaigns', c.campaignID, 'edit']">Edit</a>
+          <button class="btn btn--sm btn--danger-outline" (click)="confirmDelete(c)">Delete</button>
+        </td>
+      </tr>
+      <tr *ngIf="!loading && campaigns.length === 0">
+        <td colspan="7" class="text-center">No campaigns found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Showing {{ campaigns.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }} campaigns</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<app-confirm-dialog
+  [visible]="showDeleteConfirm"
+  title="Delete Campaign"
+  [message]="'Are you sure you want to delete &quot;' + (toDelete?.name ?? '') + '&quot;? This cannot be undone.'"
+  confirmLabel="Delete"
+  (confirmed)="doDelete()"
+  (cancelled)="cancelDelete()">
+</app-confirm-dialog>

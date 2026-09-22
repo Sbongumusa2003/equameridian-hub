@@ -1,0 +1,64 @@
+<div class="breadcrumb">
+  <a routerLink="/transactions/disputes">My Disputes</a>
+  <span>›</span>
+  <span>Dispute {{ dispute ? '#' + dispute.disputeID : '' }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading dispute...</div>
+<div class="empty-state" *ngIf="!loading && !dispute">Dispute not found.</div>
+
+<div class="page-layout" *ngIf="!loading && dispute">
+  <div class="page-layout__main">
+    <div class="panel">
+      <div class="listing-card__header">
+        <h3 class="detail-title">Dispute #{{ dispute.disputeID }} — {{ dispute.reasonCategory }}</h3>
+        <app-status-badge [status]="dispute.status"></app-status-badge>
+      </div>
+      <p class="text-muted" *ngIf="dispute.listingTitle">{{ dispute.listingTitle }}</p>
+
+      <div class="info-grid mt-20">
+        <div><small>Booking Reference</small><span>{{ dispute.bookingReference || '—' }}</span></div>
+        <div><small>Booking Amount</small><span>R {{ dispute.bookingAmount | number }}</span></div>
+        <div><small>Raised Date</small><span>{{ dispute.raisedDate | date:'d MMM yyyy' }}</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__title">Complaint</div>
+      <div class="form-section">
+        <h4>Description</h4>
+        <p class="text-muted">{{ dispute.complaintDescription }}</p>
+      </div>
+      <div class="form-section" *ngIf="dispute.desiredResolution">
+        <h4>Desired Resolution</h4>
+        <p class="text-muted">{{ dispute.desiredResolution }}</p>
+      </div>
+      <div class="form-section" *ngIf="dispute.evidenceUrls?.length">
+        <h4>Evidence</h4>
+        <ul>
+          <li *ngFor="let url of dispute.evidenceUrls">{{ url }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" *ngIf="isResolved">
+      <div class="panel__title">Resolution</div>
+      <div class="info-row"><span>Outcome</span><strong>{{ dispute.resolutionType }}</strong></div>
+      <div class="info-row" *ngIf="dispute.resolvedDate"><span>Resolved Date</span><strong>{{ dispute.resolvedDate | date:'d MMM yyyy' }}</strong></div>
+      <div class="form-section mt-16" *ngIf="dispute.resolutionNotes">
+        <h4>Notes</h4>
+        <p class="text-muted">{{ dispute.resolutionNotes }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel" *ngIf="!isResolved">
+      <h4>What happens next</h4>
+      <p class="text-muted fs-12">
+        Our admin team reviews every dispute and will reach out if more information is needed.
+        You'll be notified as soon as this dispute is resolved.
+      </p>
+    </div>
+  </div>
+</div>

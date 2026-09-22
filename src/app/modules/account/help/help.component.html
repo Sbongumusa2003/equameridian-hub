@@ -1,0 +1,51 @@
+<div class="help-page">
+  <div class="help-page__header">
+    <h1>Help &amp; Documentation</h1>
+    <p>Everything you need to know about using EquaMeridian Hub — search below, or browse by topic.</p>
+
+    <div class="help-page__search">
+      <input
+        type="text"
+        [(ngModel)]="query"
+        (ngModelChange)="onSearch()"
+        placeholder="Search help — e.g. &quot;VAT&quot;, &quot;dispute&quot;, &quot;forgot password&quot;"
+        aria-label="Search help"
+      />
+    </div>
+  </div>
+
+  <!-- Getting-started walkthrough video. Business case: a 2-3 minute recorded walkthrough gets a
+       new supplier/contractor oriented far faster than reading text, and is the first thing shown
+       on this page. Swap videoId below for your own recorded/uploaded (can be "unlisted" on
+       YouTube) walkthrough before the demo — this is a placeholder ID. -->
+  <div class="help-page__video">
+    <h2>Getting Started (video walkthrough)</h2>
+    <div class="help-page__video-frame">
+      <iframe
+        [src]="videoEmbedUrl"
+        title="EquaMeridian getting started walkthrough"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen>
+      </iframe>
+    </div>
+  </div>
+
+  <div class="help-page__empty" *ngIf="results.length === 0">
+    No help topics match "{{ query }}". Try a different word, or ask the chat assistant in the corner.
+  </div>
+
+  <div class="help-page__category" *ngFor="let category of categories">
+    <h2>{{ category }}</h2>
+
+    <article
+      class="help-section"
+      *ngFor="let section of sectionsFor(category)"
+      [id]="'help-' + section.id"
+      [class.help-section--active]="activeSectionId === section.id"
+    >
+      <h3>{{ section.title }}</h3>
+      <p *ngFor="let paragraph of section.body">{{ paragraph }}</p>
+    </article>
+  </div>
+</div>

@@ -1,0 +1,35 @@
+<div class="breadcrumb">
+  <a routerLink="/account/messages">Messages</a>
+  <span>›</span>
+  <span>{{ thread?.otherParticipantName ?? 'Conversation' }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading conversation...</div>
+<div class="empty-state" *ngIf="!loading && !thread">Conversation not found.</div>
+
+<div class="panel" *ngIf="!loading && thread">
+  <h3 class="panel__title">{{ thread.otherParticipantName }}</h3>
+
+  <div class="message-list">
+    <div *ngFor="let m of thread.messages" class="message-bubble" [class.message-bubble--mine]="isMine(m.senderID)">
+      <div class="message-bubble__meta">{{ m.senderName }} &middot; {{ m.dateSent | date:'short' }}</div>
+      <div class="message-bubble__body">{{ m.body }}</div>
+      <a *ngIf="m.attachmentURL" [href]="m.attachmentURL" target="_blank" class="message-bubble__attachment">
+        📎 {{ m.attachmentFileName ?? 'Attachment' }}
+      </a>
+    </div>
+    <div *ngIf="thread.messages.length === 0" class="text-center text-muted">No messages yet.</div>
+  </div>
+
+  <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+  <div class="reply-box">
+    <textarea rows="3" [(ngModel)]="replyBody" placeholder="Type a reply..."></textarea>
+    <div class="reply-box__actions">
+      <input type="file" (change)="onFileSelected($event)" />
+      <button class="btn btn--primary" [disabled]="sending || !replyBody.trim()" (click)="sendReply()">
+        {{ sending ? 'Sending...' : 'Send' }}
+      </button>
+    </div>
+  </div>
+</div>

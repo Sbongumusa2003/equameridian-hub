@@ -1,0 +1,55 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Content Rules</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="content-rules"></app-context-help>
+    <p>Terms blocked from listing titles and descriptions</p>
+  </div>
+</div>
+
+<div class="page-layout">
+  <div class="page-layout__main">
+    <div class="panel">
+      <div class="alert alert--success" *ngIf="message">{{ message }}</div>
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+      <form #termForm="ngForm" (ngSubmit)="termForm.form.valid && addTerm()" class="flex items-end gap-10 mb-20">
+ <div class="form-group flex-1 mb-0" >
+          <label>New Blocked Term</label>
+          <input type="text" [(ngModel)]="newTerm" name="newTerm" required placeholder="e.g. guaranteed cheapest" />
+        </div>
+        <button type="submit" class="btn btn--primary" [disabled]="adding || termForm.form.invalid">
+          {{ adding ? 'Adding...' : 'Add Term' }}
+        </button>
+      </form>
+
+      <table class="data-table">
+        <thead><tr><th>BLOCKED TERM</th><th></th></tr></thead>
+        <tbody>
+          <tr *ngIf="loading"><td class="text-center" colspan="2">Loading...</td></tr>
+          <tr *ngFor="let t of terms">
+            <td>{{ t.term }}</td>
+            <td class="text-right">
+              <button class="btn btn--sm btn--danger-outline" [disabled]="removingId === t.blockedTermID"
+                      (click)="removeTerm(t.blockedTermID)">
+                {{ removingId === t.blockedTermID ? 'Removing...' : 'Remove' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && terms.length === 0"><td class="text-center" colspan="2">No blocked terms configured.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel">
+      <h4>How this works</h4>
+      <ul>
+        <li>New listings containing a blocked term are flagged for review.</li>
+        <li>Terms can be added or removed here at any time; changes take effect immediately.</li>
+      </ul>
+    </div>
+  </div>
+</div>

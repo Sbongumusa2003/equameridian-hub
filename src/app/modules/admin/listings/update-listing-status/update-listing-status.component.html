@@ -1,0 +1,165 @@
+<div class="breadcrumb">
+  <a routerLink="/admin/listings">View Listings</a>
+  <span>/</span>
+  <span>Update Listing Status</span>
+</div>
+
+<div class="update-status-layout" *ngIf="listing">
+  <div class="update-status-layout__main">
+    <h2>Update Listing Status</h2>
+    <p>Review listing details and set the listing status for: {{ listing.listingTitle }} #LST-{{ listing.listingID }}</p>
+
+    <form [formGroup]="form">
+      <div class="form-section">
+        <h4>Basic information</h4>
+
+        <div class="form-group">
+          <label>Listing title *</label>
+          <input type="text" [value]="listing.listingTitle" readonly />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category *</label>
+            <input type="text" [value]="getCategoryName(listing.categoryID)" readonly />
+          </div>
+          <div class="form-group">
+            <label>Availability status *</label>
+            <div class="dropdown-wrapper">
+              <button type="button" class="dropdown-trigger"
+                      (click)="showStatusDropdown = !showStatusDropdown">
+                {{ selectedStatus }} ▼
+              </button>
+              <div class="dropdown-menu" *ngIf="showStatusDropdown">
+                <div class="dropdown-item"
+                     *ngFor="let s of statusOptions"
+                     [class.current]="s === listing.availabilityStatus"
+                     (click)="selectStatus(s)">
+                  {{ s }}
+                  <span *ngIf="s === listing.availabilityStatus" class="current-tag">current</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="selectedStatus === 'Suspended'">
+          <label>Suspension reason <span class="text-muted">*(required when suspending)</span></label>
+          <textarea formControlName="suspensionReason" rows="3"
+                    placeholder="e.g. Listing violates platform pricing policy..."
+                    (blur)="suspensionReasonTouched = true"
+                    [class.is-invalid]="suspensionReasonError"></textarea>
+          <div class="field-error" *ngIf="suspensionReasonError">{{ suspensionReasonError }}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Description *</label>
+          <textarea rows="3" [value]="listing.description" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Photos</h4>
+        <div class="photo-review-gallery" *ngIf="listing.imageUrls && listing.imageUrls.length > 0; else noPhotos">
+          <a *ngFor="let url of listing.imageUrls" [href]="resolveUrl(url)" target="_blank" rel="noopener">
+            <img [src]="resolveUrl(url)" alt="Listing photo" class="photo-review-gallery__thumb" />
+          </a>
+        </div>
+        <ng-template #noPhotos>
+          <p class="text-muted">No photos were uploaded for this listing.</p>
+        </ng-template>
+      </div>
+
+      <div class="form-section">
+        <h4>Specifications</h4>
+        <div class="specs-grid">
+          <div class="form-group">
+            <label>Make / Brand</label>
+            <input type="text" [value]="listing.makeBrand ?? ''" readonly />
+          </div>
+          <div class="form-group">
+            <label>Model</label>
+            <input type="text" [value]="listing.model ?? ''" readonly />
+          </div>
+          <div class="form-group">
+            <label>Year</label>
+            <input type="text" [value]="listing.year ?? ''" readonly />
+          </div>
+          <div class="form-group">
+            <label>Operating weight</label>
+            <input type="text" [value]="listing.operatingWeight ?? ''" readonly />
+          </div>
+          <div class="form-group">
+            <label>Engine power</label>
+            <input type="text" [value]="listing.enginePower ?? ''" readonly />
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" [value]="listing.location ?? ''" readonly />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Pricing</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Daily rate (ZAR) *</label>
+            <input type="text" [value]="'R ' + listing.dailyRateZAR" readonly />
+          </div>
+          <div class="form-group">
+            <label>Weekly rate (ZAR)</label>
+            <input type="text" [value]="listing.weeklyRateZAR ? 'R ' + listing.weeklyRateZAR : ''" readonly />
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn--ghost" (click)="cancel()">Cancel</button>
+        <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving">
+          {{ saving ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="update-status-layout__sidebar">
+    <div class="info-panel">
+      <h4>Listing summary</h4>
+      <div class="info-row"><span>Listing ID</span><strong>#LST-{{ listing.listingID }}</strong></div>
+      <div class="info-row"><span>Supplier</span><strong>{{ listing.supplierName }}</strong></div>
+      <div class="info-row"><span>Created</span><strong>{{ listing.createdDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+    </div>
+
+    <div class="info-panel">
+      <h4>Current status</h4>
+      <div class="status-display" [ngClass]="'status-display--' + listing.availabilityStatus.toLowerCase()">
+        <app-status-badge [status]="listing.availabilityStatus"></app-status-badge>
+        <span class="status-visibility">Publicly visible</span>
+      </div>
+
+      <div class="warning-note" *ngIf="selectedStatus === 'Suspended'">
+        <strong>Updating to Suspended will:</strong>
+        <ul><li>Remove from public search results immediately</li></ul>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="audit-header">
+        <h4>Audit log</h4>
+        <a routerLink="/admin/audit-log" [queryParams]="{ search: 'LST-' + listing.listingID }" class="link">View full log</a>
+      </div>
+      <div class="audit-item audit-item--green">
+        <span>Listing approved</span>
+        <small>Admin Smith · {{ listing.createdDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</small>
+      </div>
+    </div>
+
+    <div class="notify-note">Supplier will be notified of status changes<br/>
+      <small>All changes are logged for audit purposes</small>
+    </div>
+  </div>
+</div>

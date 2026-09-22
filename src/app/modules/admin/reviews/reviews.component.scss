@@ -1,0 +1,79 @@
+.reviews-panel {
+  overflow: hidden; /* keep children inside rounded panel */
+}
+
+.reviews-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  .form-group {
+    min-width: 0;
+  }
+
+  select {
+    min-width: 140px;
+  }
+
+  &__search {
+    flex: 1 1 200px;
+    min-width: 180px;
+
+    input {
+      width: 100%;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-bottom: 1px; /* optical align with inputs */
+  }
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.reviews-table {
+  width: 100%;
+  min-width: 720px;
+  table-layout: fixed;
+
+  th, td {
+    vertical-align: middle;
+  }
+
+  .cell-clip {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cell-rating {
+    white-space: nowrap;
+    width: 4.5rem;
+  }
+
+  .cell-date {
+    white-space: nowrap;
+    width: 6.5rem;
+  }
+
+  .col-actions {
+    width: 5.5rem;
+    text-align: right;
+    white-space: nowrap;
+
+    .btn {
+      white-space: nowrap;
+    }
+  }
+}

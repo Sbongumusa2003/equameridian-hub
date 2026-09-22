@@ -1,0 +1,195 @@
+<div class="breadcrumb">
+  <a routerLink="/browse">Browse Machinery</a>
+  <span>›</span>
+  <span>{{ listing?.listingTitle ?? 'Listing' }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading listing...</div>
+<div class="empty-state" *ngIf="!loading && !listing">Listing not found.</div>
+
+<div class="page-layout" *ngIf="!loading && listing">
+  <div class="page-layout__main">
+    <div class="panel">
+      <div class="listing-card__image listing-card__image--hero"
+           [class.listing-card__image--unavailable]="listing.unitsAvailable <= 0">
+        <span class="listing-card__unavailable-badge" *ngIf="listing.unitsAvailable <= 0">Out of stock</span>
+        <img *ngIf="listing.imageUrls && listing.imageUrls.length > 0; else noImage"
+             [src]="resolveUrl(listing.imageUrls[activeImage])"
+             [alt]="listing.listingTitle" />
+        <ng-template #noImage>
+          <div class="listing-card__image-placeholder">
+            <span class="listing-card__image-icon">🏗️</span>
+            <span class="listing-card__image-label">No image</span>
+          </div>
+        </ng-template>
+
+        <button type="button" class="gallery-nav gallery-nav--prev"
+                *ngIf="listing.imageUrls && listing.imageUrls.length > 1"
+                (click)="prevImage($event)" aria-label="Previous photo">‹</button>
+        <button type="button" class="gallery-nav gallery-nav--next"
+                *ngIf="listing.imageUrls && listing.imageUrls.length > 1"
+                (click)="nextImage($event)" aria-label="Next photo">›</button>
+        <span class="gallery-count" *ngIf="listing.imageUrls && listing.imageUrls.length > 1">
+          {{ activeImage + 1 }} / {{ listing.imageUrls.length }}
+        </span>
+      </div>
+
+      <div class="thumb-strip" *ngIf="listing.imageUrls && listing.imageUrls.length > 1">
+        <img class="thumb-strip__img" *ngFor="let img of listing.imageUrls; let i = index"
+             [class.active]="i === activeImage"
+             [src]="resolveUrl(img)" (click)="activeImage = i"
+             [alt]="'Photo ' + (i + 1)" />
+      </div>
+
+      <div class="listing-card__header">
+        <h3 class="fs-20">{{ listing.listingTitle }}</h3>
+        <div class="flex gap-6">
+          <app-status-badge [status]="listing.availabilityStatus" [showDot]="false"></app-status-badge>
+          <span class="pricing-mode-badge" [class.pricing-mode-badge--fixed]="listing.pricingMode === 'Fixed'">
+            {{ listing.pricingMode === 'Fixed' ? 'Book Now' : 'Quote Required' }}
+          </span>
+        </div>
+      </div>
+      <p class="listing-card__supplier">
+        <a [routerLink]="['/suppliers', listing.supplierID]"
+           [title]="'View all listings from ' + listing.supplierName">{{ listing.supplierName }}</a>
+        <span class="text-muted"> · supplier storefront</span>
+      </p>
+      <p class="listing-card__desc mt-12">{{ listing.description }}</p>
+
+      <div class="specs-grid mt-20">
+        <div class="form-group"><label>Make / Brand</label><div>{{ listing.makeBrand || '—' }}</div></div>
+        <div class="form-group"><label>Model</label><div>{{ listing.model || '—' }}</div></div>
+        <div class="form-group"><label>Year</label><div>{{ listing.year || '—' }}</div></div>
+        <div class="form-group"><label>Operating Weight</label><div>{{ listing.operatingWeight || '—' }}</div></div>
+        <div class="form-group"><label>Engine Power</label><div>{{ listing.enginePower || '—' }}</div></div>
+        <div class="form-group"><label>Location</label><div>{{ listing.location || '—' }}</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="panel">
+      <ng-container *ngIf="listing.pricingMode === 'Fixed'; else rfqAside">
+        <div class="alert alert--success mb-8" *ngIf="activePromo">
+          🏷️ <strong>{{ activePromo.name }}</strong> &mdash; {{ activePromo.discountValue }}% off
+          <span *ngIf="activePromo.discountCode"> with code <strong>{{ activePromo.discountCode }}</strong></span>
+        </div>
+        <span class="listing-card__price fs-24 block mb-4" *ngIf="discountedPrice as discounted; else regularPrice">
+          <span class="listing-card__price-original">R {{ listing.dailyRateZAR | number }}</span>
+          R {{ discounted | number:'1.0-2' }}<small>/day</small>
+        </span>
+        <ng-template #regularPrice>
+          <span class="listing-card__price fs-24 block mb-4">
+            R {{ listing.dailyRateZAR | number }}<small>/day</small>
+          </span>
+        </ng-template>
+        <p class="text-muted" *ngIf="listing.weeklyRateZAR">
+          R {{ listing.weeklyRateZAR | number }}/week
+        </p>
+
+        <p class="text-muted mt-8">Published daily rate — dates and fulfilment are captured on the next step, then you checkout from Cart.</p>
+        <button class="btn btn--primary btn--full mt-16"
+                [disabled]="listing.availabilityStatus !== 'Active' || listing.unitsAvailable < 1"
+                (click)="bookNow()">
+          Add to Cart
+        </button>
+        <p class="text-muted mt-8" *ngIf="listing.availabilityStatus === 'Active' && listing.unitsAvailable < 1">
+          Fully booked right now — check back later.
+        </p>
+        <p class="text-muted mt-8" *ngIf="listing.availabilityStatus !== 'Active'">
+          This listing is not currently available for booking.
+        </p>
+      </ng-container>
+
+      <ng-template #rfqAside>
+        <p class="listing-card__price--rfq fs-16 mb-4">Pricing available on request</p>
+        <p class="text-muted mb-8">This supplier prices this listing per quote. It cannot be added to the cart — request a quote for your dates and the supplier will respond with a rate.</p>
+        <button class="btn btn--primary btn--full mt-16"
+                [disabled]="listing.availabilityStatus !== 'Active'"
+                (click)="requestQuote()">
+          Request Quote
+        </button>
+        <p class="text-muted mt-8" *ngIf="listing.availabilityStatus !== 'Active'">
+          This listing is not currently available for quoting.
+        </p>
+      </ng-template>
+
+      <button type="button" class="btn btn--outline btn--full mt-8" (click)="messageSupplier()">
+        Message {{ listing.supplierName }}
+      </button>
+
+      <a class="btn btn--outline btn--full mt-8"
+         [routerLink]="['/suppliers', listing.supplierID]">
+        View {{ listing.supplierName }} storefront
+      </a>
+
+      <button type="button" class="btn btn--ghost btn--full mt-8"
+              (click)="toggleWishlist()">
+        {{ wishlist.isWishlisted(listing.listingID) ? '♥ Saved to Wishlist' : '♡ Save to Wishlist' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" *ngIf="!loading && listing">
+  <div class="panel__title">Reviews</div>
+
+  <div class="info-grid info-grid--2col" *ngIf="reviewsSummary">
+    <div>
+      <small>Average Rating</small>
+      <span class="fs-20 text-primary-strong">
+        {{ reviewsSummary.averageRating | number:'1.1-1' }} ★
+      </span>
+      <span class="text-muted"> ({{ reviewsSummary.reviewCount }} review{{ reviewsSummary.reviewCount === 1 ? '' : 's' }})</span>
+    </div>
+    <div>
+      <small>Filter by Rating</small>
+      <div class="flex gap-6 flex-wrap mt-4">
+        <button class="btn btn--sm btn--outline" [class.btn--outline-active]="reviewsStarFilter === null"
+                (click)="setStarFilter(null)">All</button>
+        <button *ngFor="let s of [5,4,3,2,1]" class="btn btn--sm btn--outline"
+                [class.btn--outline-active]="reviewsStarFilter === s"
+                (click)="setStarFilter(s)">{{ s }}★</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-bar mb-16">
+    <select [(ngModel)]="reviewsSortBy" (change)="setReviewsSort(reviewsSortBy)">
+      <option value="recent">Most Recent</option>
+      <option value="highest">Highest Rated</option>
+      <option value="lowest">Lowest Rated</option>
+    </select>
+  </div>
+
+  <div class="loading-state" *ngIf="reviewsLoading">Loading reviews...</div>
+  <div class="empty-state" *ngIf="!reviewsLoading && reviews.length === 0">
+    {{ reviewsMessage || 'No reviews yet for this listing.' }}
+  </div>
+
+  <div class="review-item" *ngFor="let r of reviews">
+    <div class="listing-card__header">
+      <div>
+        <strong>{{ r.title }}</strong>
+        <div class="text-muted">{{ r.reviewerDisplayName }} &middot; {{ r.createdAt | date:'dd MMM yyyy':'Africa/Johannesburg' }}<span *ngIf="r.isEdited"> (edited)</span></div>
+      </div>
+      <span class="text-primary-strong">{{ r.overallRating }} ★</span>
+    </div>
+    <p class="review-text">{{ r.reviewText }}</p>
+    <div class="flex gap-16 flex-wrap mt-8" *ngIf="aspectKeys(r.aspectRatings).length">
+      <span class="text-muted" *ngFor="let key of aspectKeys(r.aspectRatings)">
+        {{ reviewAspectLabels[key] || key }}: {{ r.aspectRatings[key] }}★
+      </span>
+    </div>
+  </div>
+
+  <div class="table-footer" *ngIf="!reviewsLoading && reviews.length > 0">
+    <span>Showing page {{ reviewsPage }} of {{ reviewsTotalPages }}</span>
+    <div class="pagination">
+      <button [disabled]="reviewsPage <= 1" (click)="goToReviewsPage(reviewsPage - 1)">&#8249;</button>
+      <button class="active">{{ reviewsPage }}</button>
+      <button [disabled]="reviewsPage >= reviewsTotalPages" (click)="goToReviewsPage(reviewsPage + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>

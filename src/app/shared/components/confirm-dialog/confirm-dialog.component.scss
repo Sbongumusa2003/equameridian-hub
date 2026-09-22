@@ -1,0 +1,84 @@
+.dialog-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: var(--z-modal);
+  padding: 16px;
+}
+
+.dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-modal);
+  padding: 40px;
+  max-width: 440px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  text-align: center;
+
+  &__close {
+    position: absolute; top: 16px; right: 16px;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; border-radius: 50%; cursor: pointer;
+    font-size: 16px; line-height: 1; color: var(--color-text-muted);
+    transition: background var(--transition-fast), color var(--transition-fast);
+
+    &:hover { background: var(--color-surface-alt); color: var(--color-text); }
+  }
+
+  &__icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--color-danger-tint);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+    color: var(--color-danger);
+  }
+
+  &__title {
+    font-size: 20px; font-weight: 700; margin: 0 0 8px;
+    color: var(--color-text);
+  }
+
+  &__message { color: var(--color-text-secondary); margin: 0 0 16px; line-height: 1.5; }
+
+  &__card {
+    background: var(--color-surface-alt);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: left;
+
+    strong { display: block; font-size: 15px; margin-bottom: 4px; }
+    small  { color: var(--color-text-muted); font-size: 13px; }
+  }
+
+  &__warning {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    color: var(--color-danger); font-size: 13px; margin-bottom: 24px;
+    span { font-size: 16px; }
+  }
+
+  &__actions {
+    display: flex; gap: 12px; justify-content: center;
+
+    .btn { min-width: 120px; }
+  }
+}
+
+/* Mirrors the mobile treatment of .modal (full-screen sheet on small
+   viewports) so every dialog in the app behaves the same way at narrow
+   widths, whether it's a form modal or a confirm dialog. */
+@media (max-width: 640px) {
+  .dialog-overlay { padding: 0; }
+
+  .dialog {
+    width: 100%; max-width: none; max-height: 100vh; height: 100%;
+    border-radius: 0; padding: 24px 20px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+}

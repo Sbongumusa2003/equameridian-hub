@@ -1,0 +1,128 @@
+<input #uploadFileInput type="file" accept=".pdf,.jpg,.jpeg,.png"
+       class="hidden" (change)="onFileSelected($event)" />
+<input #replaceFileInput type="file" accept=".pdf,.jpg,.jpeg,.png"
+       class="hidden" (change)="onReplaceFileSelected($event)" />
+
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Documents</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="documents"></app-context-help>
+    <p>Upload and manage your verification documents.</p>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading documents...</div>
+
+<div class="alert alert--error" *ngIf="!loading && missingRequiredTypes.length > 0">
+  You still need to upload: {{ missingRequiredTypes.length }} required document(s) &mdash;
+  {{ missingRequiredTypeNames }}.
+  Your account cannot be activated, and you won't be able to request quotations, until these are
+  uploaded and approved.
+</div>
+
+<div class="docs-layout" *ngIf="!loading">
+
+  <div class="panel upload-panel">
+    <h3 class="panel__title">Upload New Document</h3>
+
+    <div class="form-group">
+      <label>Document Type <span class="required">*</span></label>
+      <select [(ngModel)]="selectedTypeId">
+        <option [ngValue]="null">Select type...</option>
+        <option *ngFor="let t of documentTypes" [ngValue]="t.docTypeID">
+          {{ t.typeName }} ({{ t.isRequired ? 'Required' : 'Optional' }})
+        </option>
+      </select>
+    </div>
+
+    <div class="upload-zone"
+         [class.upload-zone--has-file]="selectedFile"
+         (click)="uploadFileInput.click()">
+      <div *ngIf="!selectedFile">
+        <div class="upload-icon">📄</div>
+        <span>Click to upload file</span>
+        <small>PDF, JPG, PNG — Max 10 MB</small>
+      </div>
+      <div *ngIf="selectedFile" class="upload-selected">
+        <span class="file-icon">📎</span>
+        <div>
+          <strong>{{ selectedFile.name }}</strong>
+          <small>{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert--error"   *ngIf="uploadError">{{ uploadError }}</div>
+    <div class="alert alert--success" *ngIf="uploadSuccess">✓ {{ uploadSuccess }}</div>
+
+    <div class="form-actions">
+      <button class="btn btn--ghost" *ngIf="selectedFile"
+              (click)="selectedFile = null; uploadFileInput.value = ''">Clear</button>
+      <button class="btn btn--primary" (click)="upload()" [disabled]="uploading">
+        {{ uploading ? 'Uploading...' : 'Upload Document' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="panel docs-panel">
+    <h3 class="panel__title">My Documents</h3>
+
+    <div class="alert alert--error"   *ngIf="replaceError">{{ replaceError }}</div>
+    <div class="alert alert--success" *ngIf="replaceSuccess">✓ {{ replaceSuccess }}</div>
+
+    <div *ngIf="documents.length === 0" class="empty-state empty-state--sm">
+      No documents uploaded yet.
+    </div>
+
+    <table class="data-table" *ngIf="documents.length > 0">
+      <thead>
+        <tr>
+          <th>DOCUMENT TYPE</th>
+          <th>FILE NAME</th>
+          <th>UPLOADED</th>
+          <th>STATUS</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let doc of documents">
+          <tr>
+            <td>
+              <strong>{{ getTypeName(doc.docTypeID) }}</strong>
+              <small>{{ isTypeRequired(doc.docTypeID) ? 'Required' : 'Optional' }}</small>
+            </td>
+            <td>
+              <span class="doc-name">📎 {{ doc.docName }}</span>
+            </td>
+            <td>{{ doc.uploadedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+            <td>
+              <app-status-badge [status]="doc.verificationStatus"></app-status-badge>
+            </td>
+            <td>
+              <button class="btn btn--sm btn--outline"
+                      [disabled]="replacing && replacingDocId === doc.docID"
+                      (click)="startReplace(doc.docID)">
+                {{ replacing && replacingDocId === doc.docID ? 'Uploading...' : 'Replace' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="doc.verificationStatus === 'Rejected' && doc.rejectionReason">
+            <td colspan="5">
+ <div class="alert alert--error m-0" >
+                <strong>Rejected:</strong> {{ doc.rejectionReason }}
+                Please use "Replace" above to re-upload the correct document.
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+
+    <div class="docs-note">
+      <strong>Note:</strong> All uploaded documents require admin verification.
+      Replaced documents are reset to <em>Pending</em> status and re-reviewed.
+    </div>
+  </div>
+</div>

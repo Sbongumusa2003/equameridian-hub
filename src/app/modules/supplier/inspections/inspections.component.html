@@ -1,0 +1,72 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Inspections</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="inspections"></app-context-help>
+    <p>Track inspections scheduled on your listings</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <select [(ngModel)]="statusFilter" (change)="setStatus(statusFilter)">
+      <option value="">All Statuses</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+    </select>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>MACHINERY</th><th>SCHEDULED DATE</th><th>STATUS</th><th>OUTCOME</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="5" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let i of inspections">
+        <td><strong>{{ i.machineryTitle }}</strong></td>
+        <td>{{ i.scheduledDate | date:'d MMM yyyy' }}</td>
+        <td><app-status-badge [status]="i.status"></app-status-badge></td>
+        <td>{{ i.outcome || '—' }}</td>
+        <td><button class="btn btn--sm btn--outline" (click)="viewOutcome(i)">View</button></td>
+      </tr>
+      <tr *ngIf="!loading && inspections.length === 0">
+        <td colspan="5" class="text-center">No inspections found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Showing {{ inspections.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }} inspections</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<!-- View-only detail modal. A supplier can never confirm an inspection outcome — that is
+     reserved for the requesting Admin or Contractor (see IInspectionRepository on the API). -->
+<div class="modal-overlay" *ngIf="showOutcomeModal" (click)="closeOutcome()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Inspection Details</h3>
+
+    <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="selected">
+      <p>{{ selected.machineryTitle }} — scheduled {{ selected.scheduledDate | date:'d MMM yyyy' }}</p>
+      <div class="info-row"><span>Status</span><app-status-badge [status]="selected.status"></app-status-badge></div>
+      <div class="info-row" *ngIf="selected.outcome"><span>Outcome</span><strong>{{ selected.outcome }}</strong></div>
+      <div class="info-row" *ngIf="selected.notes"><span>Notes</span><strong>{{ selected.notes }}</strong></div>
+      <p class="text-muted mt-16" *ngIf="selected.status === 'Requested'">
+        This inspection is still pending. The outcome will appear here once it's been confirmed.
+      </p>
+    </ng-container>
+
+    <div class="form-actions">
+      <button class="btn btn--ghost btn--full" (click)="closeOutcome()">Close</button>
+    </div>
+  </div>
+</div>

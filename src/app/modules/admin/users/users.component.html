@@ -1,0 +1,304 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Users</h1>
+    </div>
+    <div class="page-header__sub">
+      <app-context-help topic="admin-users"></app-context-help>
+      <p>View and manage all platform users</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button class="btn btn--primary" (click)="openCreateUser()">+ Create Admin User</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <!-- UC 1.2: Debounced search (handled via (input) + debounce in TS) -->
+    <input type="text" placeholder="Search by name, email or company..."
+           class="search-input" (input)="onSearch($any($event.target).value)" />
+
+    <select [(ngModel)]="roleFilter" (change)="page = 1; load()">
+      <option value="">All Roles</option>
+      <option value="admin">Admin</option>
+      <option value="Supplier">Supplier</option>
+      <option value="contractor">Contractor</option>
+    </select>
+    <select [(ngModel)]="statusFilter" (change)="page = 1; load()">
+      <option value="">All Statuses</option>
+      <option value="Active">Active</option>
+      <option value="Pending">Pending</option>
+      <option value="Disabled">Disabled</option>
+    </select>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>USER</th><th>ROLE</th><th>COMPANY</th>
+        <th>STATUS</th><th>JOINED</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading">
+        <td colspan="6" class="text-center">Loading...</td>
+      </tr>
+      <tr *ngFor="let user of users">
+        <td>
+          <div class="user-cell">
+            <strong>{{ user.fullName }}</strong>
+            <small>{{ user.email }}</small>
+          </div>
+        </td>
+        <td>{{ user.role }}</td>
+        <td>{{ user.companyName ?? '&#8212;' }}</td>
+        <td><app-status-badge [status]="user.accountStatus"></app-status-badge></td>
+        <td>{{ user.createdDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td>
+          <button class="btn btn--sm btn--outline" (click)="openManage(user)">Manage</button>
+        </td>
+      </tr>
+      <tr *ngIf="!loading && users.length === 0">
+        <td colspan="6" class="text-center">No users found. Try adjusting your search or filters.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>
+      Showing
+      {{ users.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }}
+      of {{ totalCount }} users
+    </span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="page = page - 1; load()">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button *ngIf="page < totalPages" (click)="page = page + 1; load()">{{ page + 1 }}</button>
+      <button [disabled]="page >= totalPages" (click)="page = page + 1; load()">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Manage Modal (UC 1.3) ──────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showManageModal && selectedUser" (click)="closeManage()">
+  <div class="modal modal--wide" (click)="$event.stopPropagation()">
+
+    <!-- Profile Summary Card -->
+    <div class="user-info-card">
+      <div class="user-avatar">{{ selectedUser.fullName | slice:0:2 | uppercase }}</div>
+      <div>
+        <strong>{{ selectedUser.fullName }}</strong>
+        <small>{{ selectedUser.email }} &middot; {{ selectedUser.role }}</small>
+        <small *ngIf="selectedUser.companyName">&middot; {{ selectedUser.companyName }}</small>
+        <app-status-badge [status]="selectedUser.accountStatus"></app-status-badge>
+      </div>
+    </div>
+
+    <!-- Account Metadata -->
+    <div class="info-grid">
+      <div>
+        <small>Registered</small>
+        <span>{{ selectedUser.createdDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</span>
+      </div>
+      <div>
+        <small>Last login</small>
+        <span>{{ selectedUser.lastLoginDate ? (selectedUser.lastLoginDate | date:'dd MMM yyyy':'Africa/Johannesburg') : '&#8212;' }}</span>
+      </div>
+      <div>
+        <small>Bookings</small>
+        <span>0 active</span>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button type="button" class="tab" [class.active]="manageTab === 'overview'" (click)="manageTab = 'overview'">Overview</button>
+      <button type="button" class="tab" *ngIf="selectedUserRequiresDocuments" [class.active]="manageTab === 'documents'" (click)="manageTab = 'documents'">
+        Documents
+        <span class="tab-count" *ngIf="checklist.length">{{ checklist.length }}</span>
+      </button>
+      <button type="button" class="tab" [class.active]="manageTab === 'audit'" (click)="manageTab = 'audit'">Audit Log</button>
+    </div>
+
+    <!-- ─── Overview: status + role ──────────────────────────────────────── -->
+    <ng-container *ngIf="manageTab === 'overview'">
+      <div class="section-label">Change Account Status</div>
+      <div class="alert alert--error" *ngIf="statusError">{{ statusError }}</div>
+      <div class="action-btns">
+        <button class="btn btn--primary"
+                [disabled]="selectedUser.accountStatus === 'Active' || !canActivateSelectedUser"
+                [title]="!canActivateSelectedUser ? 'All required documents must be uploaded and approved before this account can be activated.' : ''"
+                (click)="onStatusChange(selectedUser!.userID, 'Active')">
+          ✓ Activate Account
+        </button>
+        <button class="btn btn--danger-outline"
+                [disabled]="selectedUser.accountStatus === 'Disabled'"
+                (click)="onStatusChange(selectedUser!.userID, 'Disabled')">
+          Disable Account
+        </button>
+      </div>
+
+      <div class="info-note" *ngIf="!canActivateSelectedUser">
+        This account cannot be activated yet &mdash; not all required documents have been approved.
+        <a href="javascript:void(0)" (click)="manageTab = 'documents'">Review documents</a>
+      </div>
+      <div class="info-note" *ngIf="canActivateSelectedUser">
+        All status changes are logged for audit purposes and the user will be notified.
+      </div>
+
+      <!-- Change Role (assign into 'admin' or a custom role created under Admin > Roles) -->
+      <div class="section-label mt-16" *ngIf="canChangeSelectedUserRole">Change Role</div>
+      <ng-container *ngIf="canChangeSelectedUserRole">
+        <div class="alert alert--success" *ngIf="roleChangeMessage">{{ roleChangeMessage }}</div>
+        <div class="alert alert--error" *ngIf="roleChangeError">{{ roleChangeError }}</div>
+        <div class="action-btns">
+          <select [(ngModel)]="selectedRoleName" [ngModelOptions]="{standalone: true}" class="form-select">
+            <option *ngFor="let r of assignableRoles" [value]="r.roleName">{{ r.roleName }}</option>
+          </select>
+          <button class="btn btn--primary"
+                  [disabled]="changingRole || selectedRoleName === selectedUser.role"
+                  (click)="changeRole()">
+            {{ changingRole ? 'Saving...' : 'Save Role' }}
+          </button>
+        </div>
+        <div class="info-note">
+          Custom roles are created and their permissions configured under Admin &gt; Roles.
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- ─── Documents (folded into Manage — not a separate page).
+         Only Supplier/Contractor accounts are ever required to upload
+         verification documents, so this whole panel is skipped for Admin
+         and other internal/company-side roles. ─────────────────────────── -->
+    <ng-container *ngIf="manageTab === 'documents' && selectedUserRequiresDocuments">
+      <div class="alert alert--success" *ngIf="docMessage">{{ docMessage }}</div>
+      <div class="alert alert--error" *ngIf="docError">{{ docError }}</div>
+
+      <div class="audit-log-panel" *ngIf="checklist.length">
+        <div class="audit-item" *ngFor="let item of checklist">
+          <span>
+            {{ item.typeName }}
+            <small>&middot; {{ item.isRequired ? 'Required' : 'Optional' }}</small>
+          </span>
+          <app-status-badge [status]="item.status"></app-status-badge>
+        </div>
+      </div>
+
+      <div class="scroll-x" *ngIf="documents.length || loadingDocuments">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>DOCUMENT</th><th>TYPE</th><th>STATUS</th><th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="loadingDocuments">
+              <td colspan="4" class="text-center">Loading documents...</td>
+            </tr>
+            <ng-container *ngFor="let doc of documents">
+              <tr>
+                <td>{{ doc.docName }}</td>
+                <td>{{ doc.docTypeName }} <small *ngIf="doc.isRequired">(required)</small></td>
+                <td><app-status-badge [status]="doc.verificationStatus"></app-status-badge></td>
+                <td class="action-cell">
+                  <button class="btn btn--sm btn--outline" (click)="viewDocument(doc.docID)">View</button>
+                  <ng-container *ngIf="doc.verificationStatus === 'Pending'">
+                    <button class="btn btn--sm btn--primary"
+                            [disabled]="reviewingDocId === doc.docID"
+                            (click)="approveDocument(doc.docID)">
+                      Approve
+                    </button>
+                    <button class="btn btn--sm btn--danger-outline"
+                            [disabled]="reviewingDocId === doc.docID"
+                            (click)="startReject(doc.docID)">
+                      Reject
+                    </button>
+                  </ng-container>
+                </td>
+              </tr>
+              <tr *ngIf="rejectingDocId === doc.docID">
+                <td colspan="4">
+                  <div class="reject-reason-row">
+                    <input type="text" placeholder="Reason for rejection (shown to the user by email)"
+                           [(ngModel)]="rejectReason" class="search-input" />
+                    <button class="btn btn--sm btn--danger" [disabled]="reviewingDocId === doc.docID"
+                            (click)="confirmReject(doc.docID)">Confirm Reject</button>
+                    <button class="btn btn--sm btn--ghost" (click)="cancelReject()">Cancel</button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="doc.verificationStatus === 'Rejected' && doc.rejectionReason">
+                <td colspan="4"><small>Rejection reason: {{ doc.rejectionReason }}</small></td>
+              </tr>
+            </ng-container>
+            <tr *ngIf="!loadingDocuments && documents.length === 0">
+              <td colspan="4" class="text-center">No documents uploaded yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <!-- ─── Audit Log ────────────────────────────────────────────────────── -->
+    <ng-container *ngIf="manageTab === 'audit'">
+      <div class="audit-log-panel">
+        <div *ngIf="loadingAudit" class="text-center p-12">
+          Loading audit log...
+        </div>
+        <div *ngIf="!loadingAudit && auditLogs.length === 0" class="p-12 text-muted-color fs-13">
+          No audit events recorded.
+        </div>
+        <div class="audit-item" *ngFor="let log of auditLogs">
+          <span>{{ log.transactionType | titlecase }}</span>
+          <small>{{ log.description }} &middot; {{ log.timestamp | date:'d MMM yyyy · HH:mm' }}</small>
+        </div>
+      </div>
+    </ng-container>
+
+    <button class="btn btn--ghost btn--full mt-16" (click)="closeManage()">Close</button>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateUser()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="listing-card__header">
+      <h3 class="detail-title">Create Admin User</h3>
+      <button class="btn btn--sm btn--ghost" (click)="closeCreateUser()">✕</button>
+    </div>
+    <p class="text-muted">Internal admin accounts only — Suppliers and Contractors must self-register.</p>
+
+    <div class="alert alert--success" *ngIf="createSuccess">{{ createSuccess }}</div>
+    <div class="alert alert--error" *ngIf="createError">{{ createError }}</div>
+
+    <form *ngIf="!createSuccess" #createFormRef="ngForm" (ngSubmit)="createFormRef.form.valid && submitCreateUser()">
+      <div class="form-group">
+        <label>Full Name <span class="required">*</span></label>
+        <input type="text" [(ngModel)]="createForm.fullName" name="fullName" required />
+      </div>
+      <div class="form-group">
+        <label>Email <span class="required">*</span></label>
+        <input type="email" [(ngModel)]="createForm.email" name="email" required />
+      </div>
+      <div class="info-note">
+        A secure temporary password will be generated automatically and emailed to this address.
+      </div>
+      <div class="form-group">
+        <label>Role <span class="required">*</span></label>
+        <select [(ngModel)]="createForm.role" name="role">
+          <option value="admin">admin</option>
+          <option *ngFor="let r of assignableRoles" [value]="r.roleName"
+                  [hidden]="r.roleName.toLowerCase() === 'admin'">{{ r.roleName }}</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn--ghost" (click)="closeCreateUser()">Cancel</button>
+        <button type="submit" class="btn btn--primary" [disabled]="creatingUser || createFormRef.form.invalid">
+          {{ creatingUser ? 'Creating...' : 'Create Account' }}
+        </button>
+      </div>
+    </form>
+
+ <button *ngIf="createSuccess" class="btn btn--ghost btn--full mt-16" (click)="closeCreateUser()">Close</button>
+  </div>
+</div>

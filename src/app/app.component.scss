@@ -1,0 +1,31 @@
+.idle-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(17, 24, 39, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.idle-dialog {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 24px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+  text-align: center;
+
+  h3 { margin: 0 0 8px; font-size: 20px; }
+
+  p {
+    margin: 0 0 20px;
+    color: #555;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  strong { color: #c45c26; font-size: 18px; }
+}

@@ -1,0 +1,84 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Payment History</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="payment-history"></app-context-help>
+    <p *ngIf="!isSupplier">All payments linked to your invoices, newest first.</p>
+    <p *ngIf="isSupplier">Payouts approved by an administrator, newest first.</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
+      <option value="">All Statuses</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+    </select>
+    <select *ngIf="!isSupplier" [(ngModel)]="sort" (change)="onFilterChange()">
+      <option value="Newest">Newest first</option>
+      <option value="Oldest">Oldest first</option>
+    </select>
+  </div>
+
+  <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+  <div class="alert alert--success" *ngIf="refundSuccessId">
+    Refund request #{{ refundSuccessId }} submitted. An administrator will review it shortly.
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>DATE</th><th>BOOKING</th><th>AMOUNT</th><th>STATUS</th><th *ngIf="!isSupplier">ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="5" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let p of payments">
+        <td>{{ p.date | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td>{{ p.bookingReference }}</td>
+        <td>R {{ p.amount | number }}</td>
+        <td><app-status-badge [status]="p.status"></app-status-badge></td>
+        <td *ngIf="!isSupplier">
+          <button *ngIf="p.status === 'Paid'" class="btn btn--sm btn--outline" (click)="openRefundRequest(p)">
+            Request Refund
+          </button>
+        </td>
+      </tr>
+      <tr *ngIf="!loading && payments.length === 0">
+        <td [attr.colspan]="isSupplier ? 4 : 5" class="text-center">No payments found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer" *ngIf="!loading && payments.length > 0">
+    <span>Showing {{ payments.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }} payments</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showRefundModal && refundTarget" (click)="closeRefundRequest()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Request Refund</h3>
+    <p>Booking {{ refundTarget.bookingReference }} &middot; R {{ refundTarget.amount | number }}</p>
+
+    <div class="alert alert--error" *ngIf="refundError">{{ refundError }}</div>
+
+    <div class="form-group mt-16">
+      <label>Reason for refund</label>
+      <textarea rows="3" [(ngModel)]="refundReason" placeholder="Tell us why you're requesting a refund..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn--ghost" [disabled]="refundSubmitting" (click)="closeRefundRequest()">Cancel</button>
+      <button class="btn btn--primary" [disabled]="refundSubmitting" (click)="submitRefundRequest()">
+        {{ refundSubmitting ? 'Submitting...' : 'Submit Request' }}
+      </button>
+    </div>
+  </div>
+</div>
+

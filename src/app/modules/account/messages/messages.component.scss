@@ -1,0 +1,17 @@
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 10px; font-size: 11px; font-weight: 600;
+  background: #c84b11; color: #fff;
+}
+textarea {
+  width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px;
+  font-size: 14px; font-family: inherit; outline: none; resize: vertical;
+  &:focus { border-color: #c84b11; }
+}
+label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #444; }
+input[type="number"] {
+  width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px;
+  font-size: 14px; outline: none;
+  &:focus { border-color: #c84b11; }
+}

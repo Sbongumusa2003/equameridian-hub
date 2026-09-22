@@ -1,0 +1,104 @@
+<div class="breadcrumb">
+  <a routerLink="/browse">← Browse machinery</a>
+  <span>›</span>
+  <span>{{ store?.companyName || store?.supplierName || 'Supplier' }}</span>
+</div>
+
+<div class="page-header page-header--row" *ngIf="store">
+  <div>
+    <h1>{{ store.companyName || store.supplierName }}</h1>
+    <p>
+      <span *ngIf="store.verified">✓ Verified supplier · </span>
+      <span *ngIf="store.locationSummary">{{ store.locationSummary }} · </span>
+      {{ store.averageRating | number:'1.1-1' }} ★ ({{ store.reviewCount }} review{{ store.reviewCount === 1 ? '' : 's' }}) ·
+      {{ store.activeListings }} active listing{{ store.activeListings === 1 ? '' : 's' }}
+    </p>
+  </div>
+  <button type="button" class="btn btn--outline" (click)="messageSupplier()">
+    Message supplier
+  </button>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading storefront...</div>
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+<div class="filter-bar" *ngIf="store && !loading">
+  <div class="filter-bar__search">
+    <input type="text" class="search-input"
+           placeholder="Search this supplier’s machinery…"
+           [value]="search"
+           (input)="search = $any($event.target).value" />
+  </div>
+  <select class="filter-select"
+          [value]="categoryFilter ?? ''"
+          (change)="categoryFilter = $any($event.target).value ? +$any($event.target).value : undefined">
+    <option value="">All types</option>
+    <option *ngFor="let c of categories" [value]="c.categoryID">{{ c.name }}</option>
+  </select>
+</div>
+
+<div class="empty-state" *ngIf="!loading && store && visibleListings.length === 0">
+  This supplier has no matching listings right now.
+</div>
+
+<div class="listing-grid" *ngIf="!loading && visibleListings.length">
+  <article class="listing-card"
+           [class.listing-card--unavailable]="listing.unitsAvailable <= 0 || listing.availabilityStatus !== 'Active'"
+           *ngFor="let listing of visibleListings">
+    <a class="listing-card__image" [routerLink]="detailLink(listing)">
+      <span class="listing-card__unavailable-badge"
+            *ngIf="listing.unitsAvailable <= 0 || listing.availabilityStatus !== 'Active'">
+        {{ listing.unitsAvailable <= 0 ? 'Out of stock' : listing.availabilityStatus }}
+      </span>
+      <img
+        *ngIf="listing.imageUrls && listing.imageUrls.length > 0; else noImage"
+        [src]="resolveUrl(listing.imageUrls[0])"
+        [alt]="listing.listingTitle"
+        loading="lazy" />
+      <ng-template #noImage>
+        <div class="listing-card__image-placeholder">
+          <span class="listing-card__image-icon">🏗️</span>
+          <span class="listing-card__image-label">No image</span>
+        </div>
+      </ng-template>
+    </a>
+
+    <div class="listing-card__body">
+      <div class="listing-card__header">
+        <h3>
+          <a [routerLink]="detailLink(listing)" class="listing-card__title-link">
+            {{ listing.listingTitle }}
+          </a>
+        </h3>
+        <app-status-badge [status]="listing.availabilityStatus" [showDot]="false"></app-status-badge>
+      </div>
+      <span class="pricing-mode-badge" [class.pricing-mode-badge--fixed]="listing.pricingMode === 'Fixed'">
+        {{ listing.pricingMode === 'Fixed' ? 'Book Now' : 'Quote Required' }}
+      </span>
+      <p class="listing-card__hint text-muted">
+        {{ listing.pricingMode === 'Fixed'
+            ? 'Published daily rate — add to cart and checkout.'
+            : 'Price is negotiated — request a quote instead of adding to cart.' }}
+      </p>
+      <p class="listing-card__desc">{{ (listing.description || '') | slice:0:80 }}{{ (listing.description || '').length > 80 ? '...' : '' }}</p>
+      <div class="listing-card__footer">
+        <ng-container *ngIf="listing.pricingMode === 'Fixed'; else rfqPrice">
+          <span class="listing-card__price">
+            R {{ listing.dailyRateZAR | number }}<small>/day</small>
+          </span>
+        </ng-container>
+        <ng-template #rfqPrice>
+          <span class="listing-card__price listing-card__price--rfq">Quote required</span>
+        </ng-template>
+        <div class="listing-card__actions">
+          <a class="btn btn--ghost btn--sm" [routerLink]="detailLink(listing)">View</a>
+          <button type="button" class="btn btn--primary btn--sm"
+                  [disabled]="listing.unitsAvailable <= 0"
+                  (click)="actOnListing(listing)">
+            {{ listing.unitsAvailable <= 0 ? 'Unavailable' : (listing.pricingMode === 'Fixed' ? 'Add to Cart' : 'Request Quote') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>

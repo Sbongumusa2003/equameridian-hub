@@ -1,0 +1,55 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-top-row">
+      <a routerLink="/" class="auth-back-home">
+        <span aria-hidden="true">←</span> Back to marketplace
+      </a>
+      <span class="auth-top-row__register">You do not have an Account? <a routerLink="/auth/register" class="link">Register</a></span>
+    </div>
+        <div class="auth-card__logo">
+      <img class="brand-logo brand-logo--auth" src="assets/brand/logo-mark.png" width="56" height="56" alt="EquaMeridian Holdings" />
+      <span class="logo-text">EquaMeridian Hub</span>
+    </div>
+
+    <h2 class="auth-card__title">Sign in to your account</h2>
+    <app-context-help topic="login"></app-context-help>
+    <p class="auth-card__subtitle">Enter your credentials to continue</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="form-group">
+        <label>Email address <span class="required">*</span></label>
+        <input type="email" formControlName="email" placeholder="you@company.com"
+               [class.is-invalid]="form.get('email')?.touched && form.get('email')?.invalid" />
+        <div class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.errors?.['required']">
+          Email is required.
+        </div>
+        <div class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.errors?.['email']">
+          Please enter a valid email address.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="label-row">
+          <label>Password</label>
+          <a routerLink="/auth/forgot-password" class="link">Forgot password?</a>
+        </div>
+        <input type="password" formControlName="password" placeholder="••••••••"
+               [class.is-invalid]="form.get('password')?.touched && form.get('password')?.invalid" />
+        <div class="field-error" *ngIf="form.get('password')?.touched && form.get('password')?.errors?.['required']">
+          Password is required.
+        </div>
+      </div>
+
+      <div class="form-check">
+        <input type="checkbox" id="keepSigned" formControlName="keepMeSignedIn" />
+        <label for="keepSigned">Keep me signed in</label>
+      </div>
+
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+      <button type="submit" class="btn btn--primary btn--full" [disabled]="loading">
+        {{ loading ? 'Signing in...' : 'Sign In' }}
+      </button>
+    </form>
+  </div>
+</div>

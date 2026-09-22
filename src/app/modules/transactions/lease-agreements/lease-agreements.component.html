@@ -1,0 +1,49 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Lease Agreements</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="lease-agreements"></app-context-help>
+    <p>Review and digitally sign your rental agreements.</p>
+  </div>
+</div>
+
+<div class="panel p-0" >
+  <div class="loading-state" *ngIf="loading">Loading lease agreements...</div>
+  <div class="empty-state" *ngIf="!loading && agreements.length === 0">No lease agreements yet.</div>
+
+  <table class="data-table" *ngIf="!loading && agreements.length > 0">
+    <thead>
+      <tr>
+        <th>Agreement #</th>
+        <th>Listing</th>
+        <th>Rental Period</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let a of agreements">
+        <td><strong>{{ a.agreementNumber }}</strong></td>
+        <td>{{ a.listingTitle }}</td>
+        <td>{{ a.rentalStartDate | date:'shortDate' }} – {{ a.rentalEndDate | date:'shortDate' }}</td>
+        <td><app-status-badge [status]="a.status"></app-status-badge></td>
+        <td class="action-cell">
+          <a class="btn btn--sm" [class.btn--primary]="a.canSign" [class.btn--outline]="!a.canSign"
+             [routerLink]="['/transactions/lease-agreements', a.leaseAgreementID]">
+            {{ a.canSign ? 'Review & Sign' : 'View' }}
+          </a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer" *ngIf="!loading && agreements.length > 0">
+    <span>{{ totalCount }} agreement(s)</span>
+    <div class="pagination">
+      <button [disabled]="page === 1" (click)="goToPage(page - 1)">‹</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page === totalPages" (click)="goToPage(page + 1)">›</button>
+    </div>
+  </div>
+</div>

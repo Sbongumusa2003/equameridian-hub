@@ -1,0 +1,19 @@
+<div class="page-layout">
+  <div class="page-layout__main">
+    <div class="panel result-panel">
+      <div class="result-icon result-icon--success">✓</div>
+      <h2 class="detail-title">Payment Submitted</h2>
+      <p class="result-copy">
+        Thanks — your payment has been submitted to PayFast successfully. It can take a few
+        moments for it to reflect against your invoice while we confirm it with the gateway.
+      </p>
+
+      <div class="action-btns mt-16">
+        <a *ngIf="invoiceId" class="btn btn--primary" [routerLink]="['/transactions/invoices', invoiceId]">
+          View Invoice
+        </a>
+        <a class="btn btn--outline" routerLink="/transactions/payments">View Payment History</a>
+      </div>
+    </div>
+  </div>
+</div>

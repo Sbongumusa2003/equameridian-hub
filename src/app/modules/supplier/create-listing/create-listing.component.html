@@ -1,0 +1,218 @@
+<div class="page-layout">
+  <div class="page-layout__main">
+    <h2>Create Listing</h2>
+    <app-context-help topic="create-listing"></app-context-help>
+    <p>Submit a new machinery listing for admin review.</p>
+
+    <form [formGroup]="form" class="form-panel">
+      <div class="form-section">
+        <h4>Basic Information</h4>
+        <div class="form-group">
+          <label>Listing title *</label>
+          <input type="text" formControlName="listingTitle" placeholder="e.g. CAT 320 Hydraulic Excavator"
+                 maxlength="200" />
+          <div class="field-error" *ngIf="listingTitleError">{{ listingTitleError }}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Category *</label>
+          <select formControlName="categoryID">
+            <option [ngValue]="null">Select category... ▾</option>
+            <option *ngFor="let c of categories" [ngValue]="c.categoryID">{{ c.name }}</option>
+          </select>
+          <div class="field-error" *ngIf="categoryError">{{ categoryError }}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Description *</label>
+          <textarea formControlName="description" rows="4"
+                    placeholder="Describe the machinery, condition, features..."
+                    maxlength="2000"></textarea>
+          <div class="field-error" *ngIf="descriptionError">{{ descriptionError }}</div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Specifications</h4>
+        <div class="specs-grid">
+          <div class="form-group">
+            <label>Make / Brand</label>
+            <input type="text" formControlName="makeBrand" placeholder="e.g. Caterpillar" maxlength="100" />
+            <div class="field-error" *ngIf="makeBrandError">{{ makeBrandError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Model</label>
+            <input type="text" formControlName="model" placeholder="e.g. 320" maxlength="100" />
+            <div class="field-error" *ngIf="modelError">{{ modelError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Year</label>
+            <input type="text" formControlName="year" placeholder="e.g. 2020"
+                   inputmode="numeric" maxlength="4" autocomplete="off" />
+            <div class="field-error" *ngIf="yearError">{{ yearError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Operating weight</label>
+            <input type="text" formControlName="operatingWeight" placeholder="e.g. 30,000 kg" maxlength="50" />
+            <div class="field-error" *ngIf="operatingWeightError">{{ operatingWeightError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Engine power</label>
+            <input type="text" formControlName="enginePower" placeholder="e.g. 122 kW" maxlength="50" />
+            <div class="field-error" *ngIf="enginePowerError">{{ enginePowerError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <div class="location-input-row">
+              <input type="text" formControlName="location" placeholder="City / Area" maxlength="200" />
+              <button type="button" class="btn btn--sm btn--ghost" (click)="useMyLocation()" [disabled]="locatingGps">
+                {{ locatingGps ? '📍 Locating…' : '📍 Use my location' }}
+              </button>
+            </div>
+            <div class="field-error" *ngIf="locationError">{{ locationError }}</div>
+            <small class="hint" *ngIf="gpsError">{{ gpsError }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Pricing</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Daily rate (ZAR) *</label>
+            <input type="number" formControlName="dailyRateZAR" placeholder="e.g. 4500" min="0.01" step="0.01" />
+            <div class="field-error" *ngIf="dailyRateError">{{ dailyRateError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Weekly rate (ZAR)</label>
+            <input type="number" formControlName="weeklyRateZAR" placeholder="Optional" min="0.01" step="0.01" />
+            <div class="field-error" *ngIf="weeklyRateError">{{ weeklyRateError }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Hire Type</h4>
+        <div class="form-row">
+          <div class="form-group form-group--checkbox">
+            <label><input type="checkbox" formControlName="dryHireAvailable" /> Dry hire (equipment only)</label>
+          </div>
+          <div class="form-group form-group--checkbox">
+            <label><input type="checkbox" formControlName="wetHireAvailable" /> Wet hire (equipment + operator)</label>
+          </div>
+        </div>
+        <div class="field-error" *ngIf="hireTypeError">{{ hireTypeError }}</div>
+        <div class="form-row" *ngIf="form.value.wetHireAvailable">
+          <div class="form-group">
+            <label>Wet hire daily rate (ZAR) *</label>
+            <input type="number" formControlName="wetDailyRateZAR" placeholder="Includes operator" min="0.01" step="0.01" />
+            <div class="field-error" *ngIf="wetDailyRateError">{{ wetDailyRateError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Wet hire weekly rate (ZAR)</label>
+            <input type="number" formControlName="wetWeeklyRateZAR" placeholder="Optional" min="0.01" step="0.01" />
+            <div class="field-error" *ngIf="wetWeeklyRateError">{{ wetWeeklyRateError }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Fulfilment</h4>
+        <div class="form-row">
+          <div class="form-group form-group--checkbox">
+            <label><input type="checkbox" formControlName="pickupAvailable" /> Contractor pickup available</label>
+          </div>
+          <div class="form-group form-group--checkbox">
+            <label><input type="checkbox" formControlName="deliveryAvailable" /> Supplier delivery available</label>
+          </div>
+        </div>
+        <div class="field-error" *ngIf="fulfilmentError">{{ fulfilmentError }}</div>
+        <div class="form-row" *ngIf="form.value.deliveryAvailable">
+          <div class="form-group">
+            <label>Delivery / establishment fee (ZAR) *</label>
+            <input type="number" formControlName="deliveryFeeZAR" placeholder="Flat fee charged for delivery" min="0" step="0.01" />
+            <div class="field-error" *ngIf="deliveryFeeError">{{ deliveryFeeError }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Booking</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Pricing mode *</label>
+            <select formControlName="pricingMode">
+              <option value="Fixed">Straight hire (contractor books at your published rate)</option>
+              <option value="QuoteRequired">Request for quote (contractor requests a custom quote)</option>
+            </select>
+            <div class="field-error" *ngIf="pricingModeError">{{ pricingModeError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Units owned *</label>
+            <input type="number" formControlName="unitsOwned" min="1" max="10000" step="1" />
+            <div class="field-error" *ngIf="unitsOwnedError">{{ unitsOwnedError }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h4>Images <span class="text-muted">({{ MIN_IMAGES }}–{{ MAX_IMAGES }} required)</span></h4>
+        <input #imageInput type="file" accept="image/jpeg,image/png,image/webp"
+               multiple class="hidden"
+               (change)="onImagesSelected($event)" />
+
+        <div class="image-upload-grid">
+          <div class="image-slot image-slot--preview" *ngFor="let img of images; let i = index">
+            <img [src]="img.url" [alt]="img.file.name" />
+            <button type="button" class="image-slot__remove" (click)="removeImage(i)" title="Remove image">✕</button>
+          </div>
+
+          <div class="image-slot image-slot--add"
+               *ngIf="images.length < MAX_IMAGES"
+               (click)="openImagePicker()"
+               title="Add image">
+            <span class="image-slot__plus">+</span>
+            <span class="image-slot__label">Add photo</span>
+          </div>
+        </div>
+
+        <div class="alert alert--error mt-8" *ngIf="imageError">{{ imageError }}</div>
+        <small class="hint">JPG, PNG or WebP — max 10 MB each. At least 1 photo required (up to {{ MAX_IMAGES }}) to submit for review.</small>
+      </div>
+
+      <div class="form-check">
+        <input type="checkbox" id="mla" formControlName="agreeToMasterLeaseAgreement" />
+        <label for="mla">
+          I accept the <a routerLink="/policies/master-lease-agreement" target="_blank" rel="noopener" class="link">Master Lease Agreement</a> for this listing, including
+          the Terms &amp; Conditions and my consent for this machinery to be listed <span class="required">*</span>
+        </label>
+        <div class="field-error" *ngIf="mlaError">{{ mlaError }}</div>
+      </div>
+
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+      <div class="alert alert--success" *ngIf="draftSaved">✓ Draft saved successfully.</div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn--ghost" (click)="cancel()">Cancel</button>
+        <button type="button" class="btn btn--ghost" (click)="saveDraft()" [disabled]="savingDraft">
+          {{ savingDraft ? 'Saving...' : 'Save Draft' }}
+        </button>
+        <button type="button" class="btn btn--primary" (click)="submit()" [disabled]="loading">
+          {{ loading ? 'Submitting...' : 'Submit for Review' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel">
+      <h4>Submission Notes</h4>
+      <ul>
+        <li>Listings require admin approval before going live.</li>
+        <li>Duplicate equipment will be flagged.</li>
+        <li>At least 1 and at most {{ MAX_IMAGES }} photos are required to submit for review.</li>
+        <li>20%+ pricing changes require re-approval.</li>
+      </ul>
+    </div>
+  </div>
+</div>

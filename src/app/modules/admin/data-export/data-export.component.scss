@@ -1,0 +1,43 @@
+.reason-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 240px;
+  flex: 1;
+
+  &__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #5c574e;
+  }
+
+  &__control {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    font-size: 0.92rem;
+    background: #fff;
+  }
+}
+
+.mb-20 {
+  margin-bottom: 1.25rem;
+}
+
+.alert--success {
+  background: #eef8ef;
+  border: 1px solid #b7dfb9;
+  color: #1e5c24;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}

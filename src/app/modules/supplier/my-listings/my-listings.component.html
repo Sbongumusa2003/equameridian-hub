@@ -1,0 +1,170 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>My Listings</h1>
+    </div>
+    <div class="page-header__sub">
+      <app-context-help topic="my-listings"></app-context-help>
+      <p>All machinery listings you've created, newest first.</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="btn btn--outline" (click)="toggleImportPanel()">
+      {{ showImportPanel ? 'Hide import' : 'Import from Excel' }}
+    </button>
+    <a routerLink="/supplier/listings/create" class="btn btn--primary">+ New Listing</a>
+  </div>
+</div>
+
+<div class="panel import-panel" *ngIf="showImportPanel">
+  <h3 class="panel__title">Import equipment from Excel</h3>
+  <p class="text-muted">
+    Download the template, fill one row per machine, then upload the completed file.
+    Listings are created against <strong>your</strong> supplier account — do not enter a SupplierID.
+  </p>
+
+  <div class="alert alert--error" *ngIf="importErrorMessage">{{ importErrorMessage }}</div>
+  <div class="alert alert--success" *ngIf="importResult && importResult.errorCount === 0">
+    {{ importResult.createdCount }} listing(s) imported successfully.
+  </div>
+  <div class="alert alert--warning" *ngIf="importResult && importResult.errorCount > 0">
+    {{ importResult.createdCount }} created · {{ importResult.errorCount }} row(s) had errors.
+  </div>
+
+  <ol class="import-steps">
+    <li>Download the Excel template (headers + example row).</li>
+    <li>Fill one row per machine. Category can be a name or a CategoryID.</li>
+    <li>Upload the completed .xlsx file. Invalid rows are skipped and listed below.</li>
+  </ol>
+
+  <div class="import-actions">
+    <button type="button" class="btn btn--outline" [disabled]="downloadingTemplate" (click)="downloadTemplate()">
+      {{ downloadingTemplate ? 'Preparing…' : '1. Download template' }}
+    </button>
+    <label class="btn btn--primary" [class.disabled]="importing" style="cursor: pointer; margin: 0;">
+      {{ importing ? 'Importing…' : '2. Upload filled .xlsx' }}
+      <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+             (change)="onImportFileSelected($event)" [disabled]="importing" hidden />
+    </label>
+  </div>
+
+  <div class="import-help">
+    <strong>Required columns:</strong> Title <em>or</em> ListingTitle, Category <em>or</em> CategoryID / CategoryName, Description, DailyRate <em>or</em> DailyRateZAR.
+    Optional: UnitsOwned, MakeBrand, Model, Year, Location, PricingMode.
+  </div>
+
+  <div class="import-secondary">
+    <span class="text-muted">Also available:</span>
+    <label class="btn btn--sm btn--ghost" style="cursor: pointer;">
+      Import JSON
+      <input type="file" accept=".json" (change)="onImportJsonFileSelected($event)" [disabled]="importing" hidden />
+    </label>
+    <button type="button" class="btn btn--sm btn--ghost" (click)="exportToJson()">Export JSON</button>
+  </div>
+
+  <div *ngIf="importResult" class="mt-16">
+    <h4>Results — {{ importResult.createdCount }} created, {{ importResult.errorCount }} failed</h4>
+    <ul class="import-created" *ngIf="importResult.createdTitles?.length">
+      <li *ngFor="let t of importResult.createdTitles">{{ t }}</li>
+    </ul>
+    <ul class="import-errors" *ngIf="importResult.errors?.length">
+      <li *ngFor="let e of importResult.errors">{{ e }}</li>
+    </ul>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="tabs">
+    <button class="tab" *ngFor="let tab of tabs"
+            [class.active]="activeTab === tab"
+            (click)="applyTab(tab)">
+      {{ tab }} ({{ count(tab) }})
+    </button>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>LISTING</th>
+        <th>CATEGORY</th>
+        <th>PRICE/DAY</th>
+        <th>STATUS</th>
+        <th>CREATED</th>
+        <th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="6" class="text-center">Loading...</td></tr>
+
+      <tr *ngIf="!loading && filtered.length === 0 && allListings.length === 0">
+        <td colspan="6" class="text-center">
+          You have not created any listings yet.
+          <a routerLink="/supplier/listings/create" class="link">Create your first listing.</a>
+        </td>
+      </tr>
+      <tr *ngIf="!loading && filtered.length === 0 && allListings.length > 0">
+        <td colspan="6" class="text-center">No listings match the selected filter.</td>
+      </tr>
+
+      <tr *ngFor="let listing of filtered">
+        <td>
+          <strong>{{ listing.listingTitle }}</strong>
+          <small>#LST-{{ listing.listingID }}</small>
+        </td>
+        <td>{{ getCategoryName(listing.categoryID) }}</td>
+        <td>R {{ listing.dailyRateZAR | number }}</td>
+        <td><app-status-badge [status]="listing.availabilityStatus"></app-status-badge></td>
+        <td>{{ listing.createdDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td class="action-cell">
+          <ng-container [ngSwitch]="listing.availabilityStatus">
+            <ng-container *ngSwitchCase="'Suspended'">
+              <button class="btn btn--sm btn--ghost" disabled title="Cannot edit a suspended listing">Edit</button>
+              <button class="btn btn--sm btn--outline">Contact Admin</button>
+            </ng-container>
+            <ng-container *ngSwitchCase="'Active'">
+              <a [routerLink]="['/supplier/listings', listing.listingID, 'edit']"
+                 class="btn btn--sm btn--ghost">Edit</a>
+              <button class="btn btn--sm btn--danger-outline"
+                      (click)="openDelete(listing)">Delete</button>
+            </ng-container>
+            <ng-container *ngSwitchCase="'Pending'">
+              <a [routerLink]="['/supplier/listings', listing.listingID, 'edit']"
+                 class="btn btn--sm btn--ghost">Edit</a>
+              <button class="btn btn--sm btn--danger-outline"
+                      (click)="openDelete(listing)">Delete</button>
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+              <a [routerLink]="['/supplier/listings', listing.listingID, 'edit']"
+                 class="btn btn--sm btn--ghost">Edit</a>
+              <button class="btn btn--sm btn--danger-outline"
+                      (click)="openDelete(listing)">Delete</button>
+            </ng-container>
+          </ng-container>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer" *ngIf="totalCount > pageSize">
+    <span>Showing {{ (page - 1) * pageSize + 1 }}–{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }}</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="page = page - 1; load()">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="page = page + 1; load()">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<app-confirm-dialog
+  [visible]="showDeleteDialog"
+  title="Delete Listing"
+  message="Are you sure you want to permanently delete this listing? This cannot be undone."
+  confirmLabel="Delete permanently"
+  warning="Deletion is only allowed when the listing has no booking history, is not in any cart, and has no active lease or open quotation."
+  [detail]="selectedListing ? { title: selectedListing.listingTitle, subtitle: '#LST-' + selectedListing.listingID } : undefined"
+  (confirmed)="confirmDelete()"
+  (cancelled)="showDeleteDialog = false; deleteError = ''">
+</app-confirm-dialog>
+<div class="alert alert--error" *ngIf="showDeleteDialog && deleteError" style="max-width: 480px; margin: 0.5rem auto;">
+  {{ deleteError }}
+</div>

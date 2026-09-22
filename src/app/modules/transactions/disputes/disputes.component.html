@@ -1,0 +1,43 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>My Disputes</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Track the status of disputes you've raised or that have been raised against you</p>
+  </div>
+</div>
+
+<div class="panel">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>DISPUTE</th><th>MACHINERY</th><th>REASON</th><th>STATUS</th><th>RAISED</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="6" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let d of disputes">
+        <td><strong>#{{ d.disputeID }}</strong></td>
+        <td>{{ d.listingTitle || '—' }}</td>
+        <td>{{ d.reasonCategory }}</td>
+        <td><app-status-badge [status]="d.status"></app-status-badge></td>
+        <td>{{ d.raisedDate | date:'d MMM yyyy' }}</td>
+        <td><a class="btn btn--sm btn--outline" [routerLink]="['/transactions/disputes', d.disputeID]">View</a></td>
+      </tr>
+      <tr *ngIf="!loading && disputes.length === 0">
+        <td colspan="6" class="text-center">
+          You have no disputes. You can raise one from a booking's detail page once it's underway.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer" *ngIf="disputes.length > 0">
+    <span>Showing {{ (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }} disputes</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>

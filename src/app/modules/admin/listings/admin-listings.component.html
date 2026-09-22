@@ -1,0 +1,62 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Listings</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="admin-listings"></app-context-help>
+    <p>View and manage all machinery listings</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <input type="text" placeholder="Search listings..."
+           class="search-input" (input)="onSearch($any($event.target).value)" />
+    <select [(ngModel)]="categoryFilter" (change)="page = 1; load()">
+      <option [ngValue]="undefined">All Categories</option>
+      <option *ngFor="let c of categories" [ngValue]="c.categoryID">{{ c.name }}</option>
+    </select>
+    <select [(ngModel)]="statusFilter" (change)="page = 1; load()">
+      <option value="">All Statuses</option>
+      <option value="Active">Active</option>
+      <option value="Pending">Pending</option>
+      <option value="Suspended">Suspended</option>
+      <option value="Inactive">Inactive</option>
+    </select>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>LISTING</th><th>SUPPLIER</th><th>CATEGORY</th><th>PRICE/DAY</th><th>STATUS</th><th>ACTIONS</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="6" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let listing of listings">
+        <td>
+          <strong>{{ listing.listingTitle }}</strong>
+          <small>#LST-{{ listing.listingID }}</small>
+        </td>
+        <td>{{ listing.supplierName }}</td>
+        <td>{{ getCategoryName(listing.categoryID) }}</td>
+        <td>R {{ listing.dailyRateZAR | number }}</td>
+        <td><app-status-badge [status]="listing.availabilityStatus"></app-status-badge></td>
+        <td>
+          <a [routerLink]="['/admin/listings', listing.listingID, 'status']"
+             class="btn btn--sm btn--outline">Update Status</a>
+        </td>
+      </tr>
+      <tr *ngIf="!loading && listings.length === 0">
+        <td colspan="6" class="text-center">No listings found. Try adjusting your search or filters.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>{{ totalCount }} listings</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="page = page - 1; load()">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="page = page + 1; load()">&#8250;</button>
+    </div>
+  </div>
+</div>

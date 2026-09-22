@@ -1,0 +1,64 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Backup &amp; Restore</h1>
+    </div>
+    <div class="page-header__sub">
+      <p>Manage database backups</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button class="btn btn--primary" [disabled]="creating" (click)="createBackup()">
+    {{ creating ? 'Creating...' : '+ Create Backup' }}
+  </button>
+  </div>
+</div>
+
+<div class="alert alert--error mb-16" >
+  <strong>Heads up:</strong> Restore is destructive and cannot be undone. It overwrites the live
+  database with the selected backup and briefly disconnects every other active user while it
+  runs. Only restore from a backup you're confident in.
+</div>
+
+<div class="alert alert--success" *ngIf="message">{{ message }}</div>
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+<div class="panel">
+  <table class="data-table">
+    <thead>
+      <tr><th>FILE NAME</th><th>SIZE</th><th>CREATED</th><th></th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="4" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let b of backups">
+        <td>{{ b.fileName }}</td>
+        <td>{{ formatSize(b.sizeBytes) }}</td>
+        <td>{{ b.createdAtUtc | date:'dd MMM yyyy HH:mm':'Africa/Johannesburg' }}</td>
+        <td><button class="btn btn--sm btn--danger-outline" (click)="openRestore(b)">Restore</button></td>
+      </tr>
+      <tr *ngIf="!loading && backups.length === 0">
+        <td colspan="4" class="text-center">No backups yet.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="modal-overlay" *ngIf="restoreTarget" (click)="closeRestore()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3 class="detail-title">Restore Database</h3>
+    <p class="text-muted">
+      This will overwrite the live database with the contents of
+      <strong>{{ restoreTarget.fileName }}</strong>. This cannot be undone.
+    </p>
+    <div class="form-group">
+      <label>Type the file name to confirm</label>
+      <input type="text" [(ngModel)]="restoreConfirmText" [placeholder]="restoreTarget.fileName" />
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--ghost" (click)="closeRestore()">Cancel</button>
+      <button class="btn btn--danger" [disabled]="restoring || restoreConfirmText !== restoreTarget.fileName" (click)="confirmRestore()">
+        {{ restoring ? 'Restoring...' : 'Confirm Restore' }}
+      </button>
+    </div>
+  </div>
+</div>

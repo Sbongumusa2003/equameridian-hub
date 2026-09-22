@@ -1,0 +1,60 @@
+<div class="chatbot">
+  <button type="button" class="chatbot__fab" (click)="toggle()" [attr.aria-expanded]="open" aria-label="Open help assistant">
+    <span *ngIf="!open">💬</span>
+    <span *ngIf="open">✕</span>
+  </button>
+
+  <div class="chatbot__panel" *ngIf="open" role="dialog" aria-label="EquaMeridian assistant">
+    <div class="chatbot__header">
+      <div>
+        <strong>EquaMeridian Assistant</strong>
+        <span class="chatbot__subtitle">Self-trained ML intent model</span>
+      </div>
+      <button type="button" class="chatbot__model-btn" (click)="toggleModelInfo()" title="Model info for markers">
+        {{ showModelInfo ? 'Hide model' : 'Model info' }}
+      </button>
+    </div>
+
+    <div class="chatbot__model" *ngIf="showModelInfo && modelInfo">
+      <p><strong>{{ modelInfo.algorithm }}</strong></p>
+      <p class="muted">{{ modelInfo.featurePipeline }}</p>
+      <p>
+        {{ modelInfo.trainingExampleCount }} training phrases ·
+        {{ modelInfo.intentCount }} intents ·
+        holdout accuracy {{ (modelInfo.holdoutAccuracy * 100) | number:'1.0-1' }}%
+      </p>
+      <p class="muted">{{ modelInfo.notes }}</p>
+    </div>
+
+    <div class="chatbot__messages" #scrollBox>
+      <div *ngFor="let m of messages" class="chatbot__row" [class.chatbot__row--user]="m.sender === 'user'">
+        <div class="chatbot__bubble" [class.chatbot__bubble--user]="m.sender === 'user'">
+          {{ m.text }}
+        </div>
+        <div class="chatbot__meta" *ngIf="m.sender === 'bot' && m.intent">
+          <span class="chatbot__intent">{{ m.intent }}</span>
+          <span class="chatbot__conf" *ngIf="m.confidence != null">{{ confidencePct(m.confidence) }}</span>
+        </div>
+        <div class="chatbot__quick-replies" *ngIf="m.quickReplies?.length">
+          <button type="button" *ngFor="let qr of m.quickReplies" class="chatbot__chip" (click)="send(qr)">
+            {{ qr }}
+          </button>
+        </div>
+      </div>
+      <div class="chatbot__row" *ngIf="sending">
+        <div class="chatbot__bubble chatbot__bubble--typing">Thinking…</div>
+      </div>
+    </div>
+
+    <div class="chatbot__feedback" *ngIf="lastBotIntent && lastBotIntent !== 'LowConfidence'">
+      <span>Was this helpful?</span>
+      <button type="button" class="chatbot__chip" (click)="feedback(true)">Yes</button>
+      <button type="button" class="chatbot__chip" (click)="feedback(false)">No</button>
+    </div>
+
+    <form class="chatbot__input" (ngSubmit)="send()">
+      <input type="text" [(ngModel)]="draft" name="chatDraft" placeholder="Type a question..." autocomplete="off" />
+      <button type="submit" class="btn btn--sm" [disabled]="sending || !draft.trim()">Send</button>
+    </form>
+  </div>
+</div>

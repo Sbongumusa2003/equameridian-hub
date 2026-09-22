@@ -1,0 +1,47 @@
+
+.delivery-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; margin-top: 16px; }
+.handover-box { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid #ece7df; border-radius: 10px; background: #fafafa; }
+.handover-box textarea, .handover-box select { width: 100%; }
+
+.tracker-panel { overflow: auto; padding-bottom: 8px; }
+.tracker {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+  min-width: 640px;
+  margin-bottom: 16px;
+}
+.tracker__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 88px;
+  flex: 0 0 88px;
+}
+.tracker__icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #f3efe6; border: 2px solid #ddd4c4; font-size: 14px;
+}
+.tracker__step--complete .tracker__icon { background: #1f7a3a; border-color: #1f7a3a; color: #fff; }
+.tracker__step--current .tracker__icon { background: #c9a227; border-color: #c9a227; color: #111; }
+.tracker__label {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #333;
+}
+.tracker__when { margin-top: 4px; font-size: 10px; color: #888; }
+.tracker__when--pending { color: #b3a48a; }
+.tracker__line {
+  flex: 1 1 auto;
+  height: 2px;
+  background: #e6dece;
+  margin: 18px 4px 0;
+}
+.tracker__line--complete { background: #1f7a3a; }
+.tracker__headline { margin: 0 0 4px; font-size: 16px; }
+.tracker__subtext { margin: 0; color: #666; font-size: 13px; }

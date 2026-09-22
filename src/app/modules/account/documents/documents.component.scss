@@ -1,0 +1,87 @@
+.docs-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.upload-panel {
+  position: sticky;
+  top: 24px;
+}
+
+.upload-zone {
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: #c84b11;
+  }
+
+  &--has-file {
+    border-color: #c84b11;
+    background: #fff8f5;
+  }
+
+  .upload-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  span {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  small {
+    font-size: 12px;
+    color: #888;
+    display: block;
+  }
+}
+
+.upload-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+
+  .file-icon { font-size: 24px; flex-shrink: 0; }
+
+  strong { display: block; font-size: 14px; color: #1a1a1a; word-break: break-all; }
+  small  { font-size: 12px; color: #888; }
+}
+
+.docs-panel {
+  min-height: 300px;
+}
+
+.doc-name {
+  font-size: 13px;
+  color: #333;
+}
+
+.docs-note {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+  border-left: 3px solid #ddd;
+}
+
+@media (max-width: 900px) {
+  .docs-layout {
+    grid-template-columns: 1fr;
+  }
+}

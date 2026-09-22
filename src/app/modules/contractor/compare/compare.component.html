@@ -1,0 +1,65 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Compare Machinery</h1>
+  </div>
+  <div class="page-header__sub">
+    <app-context-help topic="compare"></app-context-help>
+    <p>Compare 2–4 machinery listings side by side. No account required to compare.</p>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+<div class="info-note" *ngIf="!loading && !error">
+  Select 2 to 4 listings on Browse machinery, then open Compare. Booking still requires a contractor account.
+</div>
+
+<div class="compare-table" *ngIf="!loading">
+  <table>
+    <thead>
+      <tr>
+        <th class="spec-col">SPECIFICATION</th>
+        <ng-container *ngFor="let listing of listings; let i = index">
+          <th [class.highlighted]="i === 2">
+            <ng-container *ngIf="listing; else emptyHeader">
+              <div class="compare-header">
+                <strong>{{ listing.listingTitle }}</strong>
+                <small>{{ listing.supplierName }}</small>
+                <span class="compare-price">R {{ listing.dailyRateZAR | number }}<small>/day</small></span>
+              </div>
+            </ng-container>
+            <ng-template #emptyHeader>
+              <div class="add-slot">+ Add listing</div>
+            </ng-template>
+          </th>
+        </ng-container>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let spec of specs">
+        <td class="spec-label">{{ specLabels[spec] }}</td>
+        <ng-container *ngFor="let listing of listings; let i = index">
+          <td [class.highlighted]="i === 2">{{ getValue(listing, spec) }}</td>
+        </ng-container>
+      </tr>
+      <tr>
+        <td class="spec-label">AVAILABILITY</td>
+        <ng-container *ngFor="let listing of listings; let i = index">
+          <td [class.highlighted]="i === 2">
+            <span *ngIf="listing" class="avail-badge">Now</span>
+            <span *ngIf="!listing">—</span>
+          </td>
+        </ng-container>
+      </tr>
+      <tr>
+        <td class="spec-label">ACTION</td>
+        <ng-container *ngFor="let listing of listings; let i = index">
+          <td [class.highlighted]="i === 2">
+            <button *ngIf="listing" class="btn btn--primary btn--sm" (click)="bookNow(listing)">Book Now</button>
+            <span *ngIf="!listing">—</span>
+          </td>
+        </ng-container>
+      </tr>
+    </tbody>
+  </table>
+</div>

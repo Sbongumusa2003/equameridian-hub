@@ -1,0 +1,65 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>My Reviews</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Reviews you left on completed leases. You can edit within the allowed window.</p>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading reviews...</div>
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+<div class="empty-state" *ngIf="!loading && reviews.length === 0">
+  You have not submitted any reviews yet. After a booking is completed, open it from
+  <a routerLink="/transactions/bookings">Bookings</a> to write a review.
+</div>
+
+<div class="panel mb-16" *ngFor="let r of reviews">
+  <div class="listing-card__header">
+    <div>
+      <strong>{{ r.listingTitle || ('Booking #' + r.bookingID) }}</strong>
+      <div class="text-muted" style="font-size:12px;">
+        {{ r.overallRating }} ★ · {{ r.createdAt | date:'mediumDate' }}
+        <span *ngIf="r.canEdit"> · editable</span>
+      </div>
+    </div>
+    <div>
+      <button class="btn btn--sm btn--outline" *ngIf="r.canEdit" (click)="startEdit(r)">Edit</button>
+      <button class="btn btn--sm btn--ghost" [disabled]="deletingId === r.reviewID" (click)="remove(r)">Delete</button>
+    </div>
+  </div>
+  <h3 style="margin:8px 0 4px;">{{ r.title }}</h3>
+  <p style="margin:0;">{{ r.reviewText }}</p>
+</div>
+
+<div class="panel" *ngIf="editing">
+  <div class="panel__title">Edit review</div>
+  <div class="alert alert--error" *ngIf="editError">{{ editError }}</div>
+  <div class="form-group">
+    <label>Overall rating</label>
+    <select [(ngModel)]="editForm.overallRating" name="overallRating">
+      <option *ngFor="let n of [1,2,3,4,5]" [ngValue]="n">{{ n }} star{{ n === 1 ? '' : 's' }}</option>
+    </select>
+  </div>
+  <div class="form-group" *ngFor="let aspect of reviewAspects | keyvalue">
+    <label>{{ reviewAspectLabels[aspect.value] || aspect.value }}</label>
+    <select [(ngModel)]="editForm.aspectRatings[aspect.value]" [name]="'a_' + aspect.value">
+      <option *ngFor="let n of [1,2,3,4,5]" [ngValue]="n">{{ n }}</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Title</label>
+    <input type="text" [(ngModel)]="editForm.title" name="title" maxlength="150" />
+  </div>
+  <div class="form-group">
+    <label>Review</label>
+    <textarea [(ngModel)]="editForm.reviewText" name="reviewText" maxlength="500" rows="4"></textarea>
+  </div>
+  <div class="action-btns">
+    <button type="button" class="btn btn--ghost" (click)="cancelEdit()">Cancel</button>
+    <button type="button" class="btn btn--primary" [disabled]="saving" (click)="saveEdit()">
+      {{ saving ? 'Saving...' : 'Save changes' }}
+    </button>
+  </div>
+</div>

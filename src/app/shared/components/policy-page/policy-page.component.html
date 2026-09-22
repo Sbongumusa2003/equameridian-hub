@@ -1,0 +1,20 @@
+<div class="policy-page" *ngIf="document; else notFound">
+  <div class="panel policy-page__panel">
+    <h1 class="detail-title">{{ document.title }}</h1>
+    <p class="text-muted policy-page__updated">{{ document.lastUpdated }}</p>
+
+    <p class="policy-page__intro">{{ document.intro }}</p>
+
+    <section class="policy-page__section" *ngFor="let section of document.sections">
+      <h3>{{ section.heading }}</h3>
+      <p *ngFor="let paragraph of section.body">{{ paragraph }}</p>
+    </section>
+  </div>
+</div>
+
+<ng-template #notFound>
+  <div class="panel">
+    <p class="text-muted">This policy page couldn't be found.</p>
+    <a routerLink="/">Back to home</a>
+  </div>
+</ng-template>

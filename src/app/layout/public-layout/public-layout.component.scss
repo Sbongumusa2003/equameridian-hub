@@ -1,0 +1,256 @@
+.brand-logo {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+
+  &--header {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  &--footer {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #fff;
+  }
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  &__name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #f7f4ee;
+  }
+
+  &__hub {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c9a227;
+    margin-top: 0.12rem;
+  }
+}
+
+.public-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f4f0e8;
+}
+
+.public-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex-wrap: wrap;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgba(201, 162, 39, 0.12);
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  &__nav {
+    display: flex;
+    gap: 0.25rem;
+
+    a {
+      text-decoration: none;
+      color: #4a463e;
+      font-size: 0.84rem;
+      font-weight: 600;
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      transition: color 0.15s ease, background 0.15s ease;
+
+      &.is-active,
+      &:hover {
+        color: #a8841a;
+        background: rgba(201, 162, 39, 0.1);
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+.logo-text {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  line-height: 1;
+
+  &__name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #1a1814;
+  }
+
+  &__hub {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #c9a227;
+  }
+}
+
+.btn-nav {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.95rem;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  &--ghost {
+    background: transparent;
+    color: #3a3630;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  &--solid {
+    background: linear-gradient(135deg, #e0c36a, #a8841a);
+    color: #1a1408;
+    box-shadow: 0 4px 14px rgba(201, 162, 39, 0.25);
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+}
+
+.public-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Full-bleed when landing is active — landing component offsets padding */
+.public-main:has(app-landing) {
+  max-width: none;
+  padding: 0;
+}
+
+.public-footer {
+  background: #0e0d0b;
+  color: rgba(247, 244, 238, 0.7);
+  margin-top: auto;
+
+  &__top {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 1.75rem;
+    display: grid;
+    grid-template-columns: 1.2fr 2fr;
+    gap: 2rem;
+  }
+
+  &__brand {
+    p {
+      margin: 0;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      max-width: 280px;
+      color: rgba(247, 244, 238, 0.55);
+    }
+  }
+
+  &__cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+
+    h4 {
+      margin: 0 0 0.75rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #c9a227;
+    }
+
+    a {
+      display: block;
+      color: rgba(247, 244, 238, 0.65);
+      text-decoration: none;
+      font-size: 0.88rem;
+      margin-bottom: 0.45rem;
+
+      &:hover {
+        color: #e0c36a;
+      }
+    }
+  }
+
+  &__bottom {
+    border-top: 1px solid rgba(201, 162, 39, 0.12);
+    padding: 1rem 1.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(247, 244, 238, 0.4);
+  }
+}
+
+@media (max-width: 768px) {
+  .public-header__nav .nav-anchor {
+    display: none;
+  }
+
+  .public-footer__top {
+    grid-template-columns: 1fr;
+  }
+
+  .public-footer__cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .public-header__nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+  }
+}

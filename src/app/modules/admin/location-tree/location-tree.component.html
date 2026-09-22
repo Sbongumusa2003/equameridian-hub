@@ -1,0 +1,102 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Location Tree</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Province &rarr; City &rarr; Suburb. Add, rename, or delete at any level. A node can only be deleted once everything under it is gone.</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="form-row" style="margin-bottom: 1rem;">
+    <input type="text" [(ngModel)]="newProvinceName" placeholder="New province name" (keyup.enter)="addProvince()" />
+    <button type="button" class="btn btn--primary" (click)="addProvince()">+ Add Province</button>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">Loading tree…</div>
+
+  <div class="tree" *ngIf="!loading">
+    <div class="tree-node tree-node--province" *ngFor="let province of tree">
+      <div class="tree-node__row">
+        <button type="button" class="tree-node__toggle" (click)="toggleProvince(province.provinceID)">
+          {{ expandedProvinces.has(province.provinceID) ? '▾' : '▸' }}
+        </button>
+
+        <ng-container *ngIf="editing?.type === 'province' && editing?.id === province.provinceID; else provinceLabel">
+          <input type="text" [(ngModel)]="editing!.name" (keyup.enter)="saveEdit()" />
+          <button type="button" class="btn btn--sm btn--primary" (click)="saveEdit()">Save</button>
+          <button type="button" class="btn btn--sm btn--ghost" (click)="cancelEdit()">Cancel</button>
+        </ng-container>
+        <ng-template #provinceLabel>
+          <strong class="tree-node__name">{{ province.name }}</strong>
+          <span class="tree-node__count">({{ province.cities.length }} cities)</span>
+          <button type="button" class="btn btn--sm btn--ghost" (click)="startEdit('province', province.provinceID, province.name)">Edit</button>
+          <button type="button" class="btn btn--sm btn--ghost" [disabled]="province.cities.length > 0"
+                  [title]="province.cities.length > 0 ? 'Delete its cities first' : ''"
+                  (click)="deleteProvince(province)">Delete</button>
+        </ng-template>
+      </div>
+
+      <div class="tree-node__children" *ngIf="expandedProvinces.has(province.provinceID)">
+        <div class="form-row">
+          <input type="text" [(ngModel)]="newCityName[province.provinceID]" placeholder="New city name"
+                 (keyup.enter)="addCity(province)" />
+          <button type="button" class="btn btn--sm btn--primary" (click)="addCity(province)">+ Add City</button>
+        </div>
+
+        <div class="tree-node tree-node--city" *ngFor="let city of province.cities">
+          <div class="tree-node__row">
+            <button type="button" class="tree-node__toggle" (click)="toggleCity(city.cityID)">
+              {{ expandedCities.has(city.cityID) ? '▾' : '▸' }}
+            </button>
+
+            <ng-container *ngIf="editing?.type === 'city' && editing?.id === city.cityID; else cityLabel">
+              <input type="text" [(ngModel)]="editing!.name" (keyup.enter)="saveEdit()" />
+              <button type="button" class="btn btn--sm btn--primary" (click)="saveEdit()">Save</button>
+              <button type="button" class="btn btn--sm btn--ghost" (click)="cancelEdit()">Cancel</button>
+            </ng-container>
+            <ng-template #cityLabel>
+              <span class="tree-node__name">{{ city.name }}</span>
+              <span class="tree-node__count">({{ city.suburbs.length }} suburbs)</span>
+              <button type="button" class="btn btn--sm btn--ghost" (click)="startEdit('city', city.cityID, city.name)">Edit</button>
+              <button type="button" class="btn btn--sm btn--ghost" [disabled]="city.suburbs.length > 0"
+                      [title]="city.suburbs.length > 0 ? 'Delete its suburbs first' : ''"
+                      (click)="deleteCity(city)">Delete</button>
+            </ng-template>
+          </div>
+
+          <div class="tree-node__children" *ngIf="expandedCities.has(city.cityID)">
+            <div class="form-row">
+              <input type="text" [(ngModel)]="newSuburbName[city.cityID]" placeholder="New suburb name"
+                     (keyup.enter)="addSuburb(city)" />
+              <button type="button" class="btn btn--sm btn--primary" (click)="addSuburb(city)">+ Add Suburb</button>
+            </div>
+
+            <div class="tree-node tree-node--suburb" *ngFor="let suburb of city.suburbs">
+              <div class="tree-node__row">
+                <span class="tree-node__toggle tree-node__toggle--leaf">•</span>
+
+                <ng-container *ngIf="editing?.type === 'suburb' && editing?.id === suburb.suburbID; else suburbLabel">
+                  <input type="text" [(ngModel)]="editing!.name" (keyup.enter)="saveEdit()" />
+                  <button type="button" class="btn btn--sm btn--primary" (click)="saveEdit()">Save</button>
+                  <button type="button" class="btn btn--sm btn--ghost" (click)="cancelEdit()">Cancel</button>
+                </ng-container>
+                <ng-template #suburbLabel>
+                  <span class="tree-node__name">{{ suburb.name }}</span>
+                  <button type="button" class="btn btn--sm btn--ghost" (click)="startEdit('suburb', suburb.suburbID, suburb.name)">Edit</button>
+                  <button type="button" class="btn btn--sm btn--ghost" (click)="deleteSuburb(city.cityID, suburb.suburbID, suburb.name)">Delete</button>
+                </ng-template>
+              </div>
+            </div>
+            <div class="tree-empty" *ngIf="city.suburbs.length === 0">No suburbs yet.</div>
+          </div>
+        </div>
+        <div class="tree-empty" *ngIf="province.cities.length === 0">No cities yet.</div>
+      </div>
+    </div>
+
+    <div class="tree-empty" *ngIf="tree.length === 0">No provinces yet — add one above.</div>
+  </div>
+</div>

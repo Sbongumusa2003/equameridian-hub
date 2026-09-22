@@ -1,0 +1,143 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Browse machinery</h1>
+    </div>
+    <div class="page-header__sub">
+      <app-context-help topic="browse"></app-context-help>
+      <p>Explore verified plant and equipment across South Africa.</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="btn btn--outline" *ngIf="compareList.length > 0" (click)="goCompare()">
+    Compare ({{ compareList.length }})
+  </button>
+  </div>
+</div>
+
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+<div class="promo-banner" *ngFor="let banner of banners">
+  <img *ngIf="banner.bannerImageURL" [src]="banner.bannerImageURL" [alt]="banner.name" class="promo-banner__image" />
+  <div class="promo-banner__text">
+    <strong>{{ banner.name }}</strong>
+    <span>{{ banner.description }}</span>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-bar__search">
+    <input type="text" placeholder="Search machinery, make, or location…" class="search-input"
+           [(ngModel)]="search" (input)="load()" />
+  </div>
+  <select class="filter-select" [(ngModel)]="categoryFilter" (change)="load()">
+    <option [ngValue]="undefined">All types</option>
+    <option *ngFor="let c of categories" [ngValue]="c.categoryID">{{ c.name }}</option>
+  </select>
+  <select class="filter-select" [(ngModel)]="serviceAreaFilter" (change)="load()">
+    <option [ngValue]="undefined">All service areas</option>
+    <option *ngFor="let a of serviceAreas" [ngValue]="a.serviceAreaID">{{ a.name }}</option>
+  </select>
+</div>
+
+<div class="listing-grid" *ngIf="!loading">
+  <article class="listing-card"
+           [class.listing-card--unavailable]="listing.unitsAvailable <= 0 || listing.availabilityStatus !== 'Active'"
+           *ngFor="let listing of listings">
+    <a class="listing-card__image" [routerLink]="detailLink(listing)">
+      <span class="listing-card__unavailable-badge"
+            *ngIf="listing.unitsAvailable <= 0 || listing.availabilityStatus !== 'Active'">
+        {{ listing.unitsAvailable <= 0 ? 'Currently Unavailable' : listing.availabilityStatus }}
+      </span>
+      <span class="listing-card__discount-badge" *ngIf="discountFor(listing) as promo">
+        {{ promo.discountValue }}% OFF
+      </span>
+      <button type="button" class="listing-card__wishlist"
+              [class.listing-card__wishlist--active]="wishlist.isWishlisted(listing.listingID)"
+              (click)="toggleWishlist(listing, $event)"
+              [title]="wishlist.isWishlisted(listing.listingID) ? 'Remove from wishlist' : 'Save to wishlist'">
+        {{ wishlist.isWishlisted(listing.listingID) ? '♥' : '♡' }}
+      </button>
+      <img
+        *ngIf="listing.imageUrls && listing.imageUrls.length > 0; else noImage"
+        [src]="resolveUrl(listing.imageUrls[0])"
+        [alt]="listing.listingTitle"
+        loading="lazy" />
+      <ng-template #noImage>
+        <div class="listing-card__image-placeholder">
+          <span class="listing-card__image-icon">🏗️</span>
+          <span class="listing-card__image-label">No image</span>
+        </div>
+      </ng-template>
+    </a>
+
+    <div class="listing-card__body">
+      <div class="listing-card__header">
+        <h3>
+          <a [routerLink]="detailLink(listing)" class="listing-card__title-link">
+            {{ listing.listingTitle }}
+          </a>
+        </h3>
+        <app-status-badge [status]="listing.availabilityStatus" [showDot]="false"></app-status-badge>
+      </div>
+      <span class="pricing-mode-badge" [class.pricing-mode-badge--fixed]="listing.pricingMode === 'Fixed'">
+        {{ listing.pricingMode === 'Fixed' ? 'Book Now' : 'Quote Required' }}
+      </span>
+      <p class="listing-card__hint text-muted">
+        {{ listing.pricingMode === 'Fixed'
+            ? 'Published daily rate — add to cart and checkout.'
+            : 'Price is negotiated — request a quote instead of adding to cart.' }}
+      </p>
+      <p class="listing-card__supplier">{{ listing.supplierName }}</p>
+      <p class="listing-card__stock"
+         [class.listing-card__stock--none]="listing.unitsAvailable <= 0">
+        <ng-container *ngIf="listing.unitsAvailable > 0; else noStock">
+          {{ listing.unitsAvailable }} unit{{ listing.unitsAvailable === 1 ? '' : 's' }} available
+        </ng-container>
+        <ng-template #noStock>No units available</ng-template>
+      </p>
+      <p class="listing-card__desc">{{ listing.description | slice:0:80 }}...</p>
+      <p class="listing-card__promo" *ngIf="discountFor(listing) as promo">
+        {{ promo.name }}<span *ngIf="promo.discountCode"> · code <strong>{{ promo.discountCode }}</strong></span>
+      </p>
+      <div class="listing-card__footer">
+        <ng-container *ngIf="listing.pricingMode === 'Fixed'; else rfqPrice">
+          <span class="listing-card__price" *ngIf="discountedPrice(listing) as discounted; else regularPrice">
+            <span class="listing-card__price-original">R {{ listing.dailyRateZAR | number }}</span>
+            R {{ discounted | number:'1.0-2' }}<small>/day</small>
+          </span>
+          <ng-template #regularPrice>
+            <span class="listing-card__price">
+              R {{ listing.dailyRateZAR | number }}<small>/day</small>
+            </span>
+          </ng-template>
+        </ng-container>
+        <ng-template #rfqPrice>
+          <span class="listing-card__price listing-card__price--rfq">Quote required</span>
+        </ng-template>
+        <div class="listing-card__actions">
+          <button type="button" class="btn btn--sm btn--outline"
+                  [class.btn--outline-active]="isInCompare(listing)"
+                  [disabled]="!isComparable(listing) && !isInCompare(listing)"
+                  [title]="!isComparable(listing) ? 'Only available machinery can be compared' : (isInCompare(listing) ? 'Remove from compare' : 'Add to compare')"
+                  (click)="toggleCompare(listing)">
+            {{ isInCompare(listing) ? 'Added' : 'Compare' }}
+          </button>
+          <button type="button" class="btn btn--primary btn--sm"
+                  [disabled]="listing.unitsAvailable <= 0"
+                  [title]="listing.unitsAvailable <= 0 ? 'No units currently available' : ''"
+                  (click)="actOnListing(listing)">
+            {{ listing.unitsAvailable <= 0 ? 'Unavailable' : (listing.pricingMode === 'Fixed' ? 'Add to Cart' : 'Request Quote') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading listings…</div>
+
+<div class="empty-state" *ngIf="!loading && !error && listings.length === 0">
+  <strong>No active listings yet</strong>
+  <p>Only approved machinery appears here. Check back soon, or try a different search.</p>
+</div>

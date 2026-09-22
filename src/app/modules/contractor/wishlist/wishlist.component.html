@@ -1,0 +1,43 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>My Wishlist</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Listings you saved while browsing.</p>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading wishlist...</div>
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+
+<div class="empty-state" *ngIf="!loading && items.length === 0">
+  No saved listings yet. <a routerLink="/contractor/browse">Browse machinery</a> and tap the heart to save.
+</div>
+
+<div class="panel" *ngIf="!loading && items.length > 0">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>LISTING</th>
+        <th>SAVED</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of items">
+        <td>
+          <button type="button" class="linkish" (click)="openListing(item)">
+            {{ listingTitle(item) }}
+          </button>
+          <div class="text-muted" *ngIf="supplierName(item)" style="font-size:12px;">{{ supplierName(item) }}</div>
+        </td>
+        <td>{{ item.addedDate | date:'mediumDate' }}</td>
+        <td class="text-right">
+          <button class="btn btn--sm btn--outline" (click)="openListing(item)">View</button>
+          <button class="btn btn--sm btn--ghost" [disabled]="removingId === item.wishlistItemID"
+                  (click)="remove(item)">Remove</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

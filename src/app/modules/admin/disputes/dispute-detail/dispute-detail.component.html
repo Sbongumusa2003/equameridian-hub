@@ -1,0 +1,101 @@
+<div class="breadcrumb">
+  <a routerLink="/admin/disputes">Disputes</a>
+  <span>›</span>
+  <span>Dispute {{ dispute ? '#' + dispute.disputeID : '' }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading dispute...</div>
+<div class="empty-state" *ngIf="!loading && !dispute">Dispute not found.</div>
+
+<div class="page-layout" *ngIf="!loading && dispute">
+  <div class="page-layout__main">
+    <div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
+
+    <div class="panel">
+      <div class="listing-card__header">
+        <h3 class="detail-title">Dispute #{{ dispute.disputeID }} — {{ dispute.reasonCategory }}</h3>
+        <app-status-badge [status]="dispute.status"></app-status-badge>
+      </div>
+      <p class="text-muted" *ngIf="dispute.listingTitle">{{ dispute.listingTitle }}</p>
+
+ <div class="info-grid mt-20" >
+        <div><small>Contractor</small><span>{{ dispute.contractorName }}</span></div>
+        <div><small>Supplier</small><span>{{ dispute.supplierName }}</span></div>
+        <div><small>Booking Reference</small><span>{{ dispute.bookingReference || '—' }}</span></div>
+      </div>
+
+      <div class="info-row"><span>Contractor Contact</span><strong>{{ dispute.contractorContact }}</strong></div>
+      <div class="info-row"><span>Supplier Contact</span><strong>{{ dispute.supplierContact }}</strong></div>
+      <div class="info-row"><span>Booking Amount</span><strong>R {{ dispute.bookingAmount | number }}</strong></div>
+      <div class="info-row"><span>Raised Date</span><strong>{{ dispute.raisedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__title">Complaint</div>
+      <div class="form-section">
+        <h4>Description</h4>
+        <p class="text-muted">{{ dispute.complaintDescription }}</p>
+      </div>
+      <div class="form-section" *ngIf="dispute.desiredResolution">
+        <h4>Desired Resolution</h4>
+        <p class="text-muted">{{ dispute.desiredResolution }}</p>
+      </div>
+      <div class="form-section" *ngIf="dispute.evidenceUrls?.length">
+        <h4>Evidence</h4>
+        <ul>
+          <li *ngFor="let url of dispute.evidenceUrls"><a class="link" [href]="url" target="_blank">{{ url }}</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel" *ngIf="isResolved">
+      <div class="panel__title">Resolution</div>
+      <div class="info-row"><span>Outcome</span><strong>{{ dispute.resolutionType }}</strong></div>
+      <div class="info-row" *ngIf="dispute.resolvedDate"><span>Resolved Date</span><strong>{{ dispute.resolvedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+ <div class="form-section mt-16" *ngIf="dispute.resolutionNotes" >
+        <h4>Notes</h4>
+        <p class="text-muted">{{ dispute.resolutionNotes }}</p>
+      </div>
+    </div>
+
+    <div class="panel" *ngIf="!isResolved">
+      <div class="panel__title">Resolve Dispute</div>
+      <div class="form-group">
+        <label>Resolution Outcome</label>
+        <select [(ngModel)]="form.resolutionOutcome">
+          <option value="">Select outcome...</option>
+          <option *ngFor="let o of outcomeOptions" [value]="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+      <div class="form-group" *ngIf="needsRefundAmount">
+        <label>Refund Amount (R) <span class="required">*</span></label>
+        <input type="number" min="0.01" step="0.01" [(ngModel)]="form.refundAmount" name="refundAmount"
+               [class.is-invalid]="needsRefundAmount && (form.refundAmount === null || form.refundAmount <= 0)" />
+      </div>
+      <div class="form-group">
+        <label>Resolution Notes</label>
+        <textarea rows="4" [(ngModel)]="form.resolutionNotes"
+                  placeholder="Explain the basis for this resolution..."></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn--ghost" (click)="back()">Cancel</button>
+        <button class="btn btn--primary" [disabled]="resolving" (click)="resolve()">
+          {{ resolving ? 'Resolving...' : 'Resolve Dispute' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel">
+      <h4>Guidance</h4>
+      <ul>
+        <li>Uphold Refund issues a full refund to the contractor.</li>
+        <li>Partial Refund requires a refund amount.</li>
+        <li>Reject closes the dispute with no refund.</li>
+        <li>Escalate flags this dispute for further review.</li>
+      </ul>
+    </div>
+  </div>
+</div>

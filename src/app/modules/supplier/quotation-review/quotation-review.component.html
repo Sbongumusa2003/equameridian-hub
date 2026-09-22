@@ -1,0 +1,99 @@
+<div class="breadcrumb">
+  <a routerLink="/supplier/quotations">Quotation Requests</a>
+  <span>›</span>
+  <span>Quotation #{{ quotation?.quotationID }}</span>
+</div>
+
+<div class="loading-state" *ngIf="loading">Loading quotation request...</div>
+<div class="empty-state" *ngIf="!loading && !quotation">Quotation not found.</div>
+
+<div class="page-layout" *ngIf="!loading && quotation">
+  <div class="page-layout__main">
+    <div class="panel">
+      <div class="listing-card__header">
+        <h3 class="detail-title">{{ quotation.listingTitle }}</h3>
+        <app-status-badge [status]="quotation.status"></app-status-badge>
+      </div>
+      <p class="text-muted">Requested by {{ quotation.contractorName }}</p>
+
+      <div class="info-grid mt-20">
+        <div><small>Rental Start</small><span>{{ quotation.rentalStartDate ? (quotation.rentalStartDate | date:'mediumDate') : '—' }}</span></div>
+        <div><small>Rental End</small><span>{{ quotation.rentalEndDate ? (quotation.rentalEndDate | date:'mediumDate') : '—' }}</span></div>
+        <div><small>Quantity</small><span>{{ quotation.quantity != null ? quotation.quantity : '—' }}</span></div>
+        <div><small>Hire Type</small><span>{{ quotation.hireType || 'Dry' }} Hire</span></div>
+        <div><small>Fulfillment</small><span>{{ quotation.fulfillmentMethod || '—' }}</span></div>
+        <div *ngIf="quotation.fulfillmentMethod === 'Supplier Delivery'">
+          <small>Delivery Location</small><span>{{ quotation.deliveryAddress }}</span>
+        </div>
+      </div>
+      <div class="mt-20" *ngIf="quotation.specialRequirements">
+        <small>Special Requirements</small>
+        <p>{{ quotation.specialRequirements }}</p>
+      </div>
+    </div>
+
+    <form class="form-panel" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="alert alert--error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <div class="form-section">
+        <h4>Your Quote</h4>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Daily Rate (ZAR) <span class="required">*</span></label>
+            <input type="number" step="0.01" formControlName="dailyRateZAR"
+                   [class.is-invalid]="dailyRateError" />
+            <div class="field-error" *ngIf="dailyRateError">{{ dailyRateError }}</div>
+          </div>
+          <div class="form-group">
+            <label>Weekly Rate (ZAR)</label>
+            <input type="number" step="0.01" formControlName="weeklyRateZAR"
+                   [class.is-invalid]="weeklyRateError" />
+            <div class="field-error" *ngIf="weeklyRateError">{{ weeklyRateError }}</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Delivery Fee (ZAR) <span class="required" *ngIf="quotation.fulfillmentMethod === 'Supplier Delivery'">*</span></label>
+            <input type="number" step="0.01" formControlName="deliveryFee"
+                   [class.is-invalid]="deliveryFeeError" />
+            <div class="field-error" *ngIf="deliveryFeeError">{{ deliveryFeeError }}</div>
+            <small class="text-muted" *ngIf="quotation.fulfillmentMethod === 'Contractor Pickup'">
+              Contractor chose pickup — no delivery fee applies.
+            </small>
+          </div>
+          <div class="form-group">
+            <label>Quote Valid Until <span class="required">*</span></label>
+            <input type="date" formControlName="quoteValidUntil" [min]="todayISO"
+                   [class.is-invalid]="quoteValidUntilError" />
+            <div class="field-error" *ngIf="quoteValidUntilError">{{ quoteValidUntilError }}</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Notes to Customer</label>
+          <textarea formControlName="notesToCustomer" placeholder="Anything the contractor should know about this quote..."></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions" *ngIf="quotation.status === 'Requested'">
+        <a class="btn btn--ghost" routerLink="/supplier/quotations">Cancel</a>
+        <button type="submit" class="btn btn--primary" [disabled]="submitting">
+          {{ submitting ? 'Submitting...' : 'Submit Quote' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="page-layout__aside">
+    <div class="info-panel">
+      <h4>Tips</h4>
+      <ul>
+        <li>Set a realistic validity window for your quote.</li>
+        <li>Once submitted, the contractor can accept or reject it.</li>
+        <li>Accepting creates a booking, invoice and lease agreement automatically.</li>
+      </ul>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,19 @@
+<div class="page-layout">
+  <div class="page-layout__main">
+    <div class="panel result-panel">
+      <div class="result-icon result-icon--cancelled">✕</div>
+      <h2 class="detail-title">Payment Cancelled</h2>
+      <p class="result-copy">
+        Your payment was cancelled and no charge was made. You can try again from the invoice
+        whenever you're ready.
+      </p>
+
+      <div class="action-btns mt-16">
+        <a *ngIf="invoiceId" class="btn btn--primary" [routerLink]="['/transactions/invoices', invoiceId]">
+          Back to Invoice
+        </a>
+        <a class="btn btn--outline" routerLink="/transactions/invoices">View All Invoices</a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,99 @@
+<div class="page-header">
+  <div class="page-header__title">
+    <h1>Payouts</h1>
+  </div>
+  <div class="page-header__sub">
+    <p>Review supplier payout requests and approve or decline them</p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="filter-bar">
+    <input type="text" placeholder="Search by invoice or supplier..."
+           class="search-input" (input)="onSearch($any($event.target).value)" />
+    <select [(ngModel)]="statusFilter" (change)="page = 1; load()">
+      <option value="">All Statuses</option>
+      <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+    </select>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>PAYOUT</th><th>SUPPLIER</th><th>INVOICE</th><th>AMOUNT</th>
+        <th>STATUS</th><th>REQUESTED</th><th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="loading"><td colspan="7" class="text-center">Loading...</td></tr>
+      <tr *ngFor="let p of payouts">
+        <td><strong>#{{ p.payoutID }}</strong></td>
+        <td>{{ p.supplierName }}</td>
+        <td>{{ p.invoiceNumber }}</td>
+        <td>R {{ p.payoutAmount | number }}</td>
+        <td><app-status-badge [status]="p.status"></app-status-badge></td>
+        <td>{{ p.requestedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td><button class="btn btn--sm btn--outline" (click)="viewDetail(p)">View</button></td>
+      </tr>
+      <tr *ngIf="!loading && payouts.length === 0">
+        <td colspan="7" class="text-center">No payout requests found.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="table-footer">
+    <span>Showing {{ payouts.length === 0 ? 0 : (page - 1) * pageSize + 1 }}&ndash;{{ page * pageSize < totalCount ? page * pageSize : totalCount }} of {{ totalCount }} payouts</span>
+    <div class="pagination">
+      <button [disabled]="page <= 1" (click)="goToPage(page - 1)">&#8249;</button>
+      <button class="active">{{ page }}</button>
+      <button [disabled]="page >= totalPages" (click)="goToPage(page + 1)">&#8250;</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showDetailModal && selected" (click)="closeDetail()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Payout #{{ selected.payoutID }}</h3>
+    <p>{{ selected.supplierName }} &middot; Invoice {{ selected.invoiceNumber }} &middot; {{ selected.listingTitle }}</p>
+
+    <div class="info-row"><span>Gross Amount</span><strong>R {{ selected.grossAmount | number }}</strong></div>
+    <div class="info-row"><span>Commission</span><strong>&ndash;R {{ selected.commissionAmount | number }}</strong></div>
+    <div class="info-row"><span>VAT</span><strong>R {{ selected.vatAmount | number }}</strong></div>
+    <div class="info-row"><span>Payout Amount</span><strong>R {{ selected.payoutAmount | number }}</strong></div>
+    <div class="info-row"><span>Status</span><app-status-badge [status]="selected.status"></app-status-badge></div>
+    <div class="info-row" *ngIf="selected.supplierNotes"><span>Supplier Notes</span><strong>{{ selected.supplierNotes }}</strong></div>
+    <div class="info-row" *ngIf="selected.declineReason"><span>Decline Reason</span><strong>{{ selected.declineReason }}</strong></div>
+    <div class="info-row"><span>Requested</span><strong>{{ selected.requestedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+    <div class="info-row" *ngIf="selected.processedDate"><span>Processed</span><strong>{{ selected.processedDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</strong></div>
+
+    <div class="form-section mt-16" *ngIf="selected.administratorNotes">
+      <h4>Administrator Notes</h4>
+      <p class="text-muted">{{ selected.administratorNotes }}</p>
+    </div>
+
+    <ng-container *ngIf="selected.status === 'Pending'">
+      <div class="alert alert--error" *ngIf="processError">{{ processError }}</div>
+
+      <div class="form-group mt-16">
+        <label>Administrator Notes (optional)</label>
+        <textarea rows="2" [(ngModel)]="adminNotes" placeholder="Internal notes about this decision..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Decline Reason (required to decline)</label>
+        <textarea rows="2" [(ngModel)]="declineReason" placeholder="Reason the payout could not be approved..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn--danger-outline" [disabled]="processing" (click)="declinePayout()">
+          {{ processing ? 'Please wait...' : 'Decline Payout' }}
+        </button>
+        <button class="btn btn--primary" [disabled]="processing" (click)="approvePayout()">
+          {{ processing ? 'Please wait...' : 'Approve Payout' }}
+        </button>
+      </div>
+    </ng-container>
+
+    <button class="btn btn--ghost btn--full mt-16" (click)="closeDetail()">Close</button>
+  </div>
+</div>

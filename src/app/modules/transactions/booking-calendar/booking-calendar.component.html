@@ -1,0 +1,93 @@
+<div class="page-header page-header--row">
+  <div class="page-header__main">
+    <div class="page-header__title">
+      <h1>Bookings Calendar</h1>
+    </div>
+    <div class="page-header__sub">
+      <app-context-help topic="bookings"></app-context-help>
+      <p>See pickups, returns and active rentals laid out by date.</p>
+    </div>
+  </div>
+  <div class="page-header__actions">
+    <button class="btn btn--ghost" *ngIf="viewMode === 'calendar'" (click)="setViewMode('list')">☰ List view</button>
+  <button class="btn btn--ghost" *ngIf="viewMode === 'list'" (click)="setViewMode('calendar')">📅 Calendar view</button>
+  </div>
+</div>
+
+<div class="calendar-toolbar">
+  <div class="calendar-toolbar__nav">
+    <button class="btn btn--sm btn--outline" (click)="prevMonth()" aria-label="Previous month">‹</button>
+    <h2 class="calendar-toolbar__month">{{ monthLabel }}</h2>
+    <button class="btn btn--sm btn--outline" (click)="nextMonth()" aria-label="Next month">›</button>
+  </div>
+  <button class="btn btn--sm btn--ghost" (click)="goToToday()">Today</button>
+</div>
+
+<div class="alert alert--error" *ngIf="error">{{ error }}</div>
+<div class="loading-state" *ngIf="loading">Loading calendar...</div>
+
+<div class="calendar-shell" *ngIf="!loading && !error && viewMode === 'calendar'">
+  <div class="calendar">
+    <div class="calendar__weekday" *ngFor="let d of weekdayLabels">{{ d }}</div>
+
+    <ng-container *ngFor="let week of weeks">
+      <div
+        class="calendar__day"
+        *ngFor="let day of week"
+        [class.calendar__day--outside]="!day.inCurrentMonth"
+        [class.calendar__day--today]="day.isToday">
+        <div class="calendar__day-number">{{ day.date.getDate() }}</div>
+
+        <div class="calendar__chips">
+          <button
+            type="button"
+            class="calendar-chip"
+            [class.calendar-chip--start]="chip.kind === 'start'"
+            [class.calendar-chip--end]="chip.kind === 'end'"
+            [class.calendar-chip--ongoing]="chip.kind === 'ongoing'"
+            *ngFor="let chip of day.chips"
+            (click)="openBooking(chip.bookingID)"
+            [title]="chip.machinery + ' — ' + chip.status">
+            <span class="calendar-chip__icon" aria-hidden="true">{{ chip.kind === 'start' ? '📦' : (chip.kind === 'end' ? '↩' : '•') }}</span>
+            <span class="calendar-chip__label">{{ chip.machinery }}</span>
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<div class="calendar-legend" *ngIf="viewMode === 'calendar' && !loading && !error">
+  <span><span class="calendar-chip__icon">📦</span> Pickup / delivery</span>
+  <span><span class="calendar-chip__icon">↩</span> Return due</span>
+  <span><span class="calendar-chip__icon">•</span> Ongoing rental</span>
+</div>
+
+<div class="panel p-0" *ngIf="!loading && !error && viewMode === 'list'">
+  <div class="empty-state" *ngIf="bookings.length === 0">No bookings in {{ monthLabel }}.</div>
+
+  <table class="data-table" *ngIf="bookings.length > 0">
+    <thead>
+      <tr>
+        <th>Machinery</th>
+        <th>Supplier</th>
+        <th>Contractor</th>
+        <th>Rental Period</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let b of bookingsSortedByStart">
+        <td><strong>{{ b.machinery }}</strong></td>
+        <td>{{ b.supplierName }}</td>
+        <td>{{ b.contractorName }}</td>
+        <td>{{ b.rentalStartDate | date:'dd MMM yyyy':'Africa/Johannesburg' }} – {{ b.rentalEndDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}</td>
+        <td><app-status-badge [status]="b.status"></app-status-badge></td>
+        <td class="action-cell">
+          <button class="btn btn--sm btn--outline" (click)="openBooking(b.bookingID)">View</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

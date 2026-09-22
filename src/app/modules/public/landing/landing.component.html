@@ -1,0 +1,199 @@
+<div class="landing">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__bg" aria-hidden="true">
+      <div class="hero__grid"></div>
+      <div class="hero__glow hero__glow--1"></div>
+      <div class="hero__glow hero__glow--2"></div>
+      <div class="hero__orb"></div>
+    </div>
+
+    <div class="hero__content">
+      <div class="hero__copy">
+        <div class="hero__eyebrow reveal is-visible" #reveal>
+          <span class="dot"></span>
+          Equipment · Marketplace · Digital hire
+        </div>
+        <h1 class="hero__title reveal is-visible" #reveal>
+          Physical delivery.<br />
+          <span class="gold">Digital capability.</span>
+        </h1>
+        <p class="hero__lead reveal is-visible" #reveal>
+          EquaMeridian Hub is the equipment hire marketplace for South African contractors and suppliers —
+          transparent rates, verified listings, digital leases, and end-to-end transaction control.
+        </p>
+        <div class="hero__cta reveal is-visible" #reveal>
+          <a routerLink="/browse" class="btn-hero btn-hero--primary">
+            Browse machinery
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+          <a routerLink="/auth/register" class="btn-hero btn-hero--ghost">Create account</a>
+        </div>
+        <div class="hero__stats reveal is-visible" #reveal>
+          <div class="stat" *ngFor="let s of stats">
+            <div class="stat__value">{{ s.value }}</div>
+            <div class="stat__label">{{ s.label }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__visual reveal is-visible" #reveal aria-hidden="true">
+        <div class="stack">
+          <div class="stack__card stack__card--1">
+            <div class="stack__label">Equipment hire</div>
+            <div class="stack__title">Excavators · Loaders · Cranes</div>
+          </div>
+          <div class="stack__card stack__card--2">
+            <div class="stack__label">Live marketplace</div>
+            <div class="stack__title">Quotes · Bookings · Leases</div>
+          </div>
+          <div class="stack__card stack__card--3">
+            <div class="stack__label">Platform control</div>
+            <div class="stack__title">Inspections · Payouts · Reports</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero__scroll" aria-hidden="true">
+      <span>Scroll</span>
+      <div class="hero__scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ACTIVE MARKETING BANNERS -->
+  <section class="promo-banners" *ngIf="banners.length">
+    <div class="promo-banners__inner">
+      <button type="button" class="promo-banners__nav" *ngIf="banners.length > 1" (click)="prevBanner()" aria-label="Previous promo">‹</button>
+      <div class="promo-banners__slide" *ngFor="let b of banners; let i = index" [class.is-active]="i === activeBannerIndex">
+        <img [src]="b.bannerImageURL" [alt]="b.name" loading="lazy" />
+        <div class="promo-banners__copy">
+          <h3>{{ b.name }}</h3>
+          <p *ngIf="b.description">{{ b.description }}</p>
+          <a routerLink="/browse" class="btn-hero btn-hero--primary btn-hero--sm">Browse offers</a>
+        </div>
+      </div>
+      <button type="button" class="promo-banners__nav" *ngIf="banners.length > 1" (click)="nextBanner()" aria-label="Next promo">›</button>
+    </div>
+  </section>
+
+  <!-- TRUST STRIP -->
+  <section class="trust">
+    <div class="trust__inner reveal" #reveal>
+      <span>Built for industrial plant &amp; equipment hire</span>
+      <span class="sep">·</span>
+      <span>Contractor &amp; supplier workflows</span>
+      <span class="sep">·</span>
+      <span>Audit-ready operations</span>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section how" id="how-it-works">
+    <div class="section__head reveal" #reveal>
+      <p class="eyebrow">How it works</p>
+      <h2>From search to off-hire in four steps</h2>
+      <p class="section__sub">
+        A structured hire journey — not a spreadsheet, not a phone-tag process.
+      </p>
+    </div>
+    <div class="how__grid">
+      <article class="how-card reveal" #reveal *ngFor="let step of steps; let i = index"
+               [style.--i]="i">
+        <div class="how-card__step">{{ step.step }}</div>
+        <h3>{{ step.title }}</h3>
+        <p>{{ step.body }}</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section class="section roles" id="roles">
+    <div class="section__head reveal" #reveal>
+      <p class="eyebrow">Who it’s for</p>
+      <h2>One platform. Two clear sides of the hire.</h2>
+    </div>
+    <div class="roles__grid">
+      <article class="role-card reveal" #reveal *ngFor="let r of roles" [class]="'role-card--' + r.accent">
+        <div class="role-card__tag">{{ r.tag }}</div>
+        <h3>{{ r.title }}</h3>
+        <ul>
+          <li *ngFor="let p of r.points">{{ p }}</li>
+        </ul>
+        <a [routerLink]="r.link" class="role-card__cta">
+          {{ r.cta }}
+          <span aria-hidden="true">→</span>
+        </a>
+      </article>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section features" id="features">
+    <div class="section__head reveal" #reveal>
+      <p class="eyebrow">Platform capabilities</p>
+      <h2>Everything required to run hire professionally</h2>
+      <p class="section__sub">
+        Marketplace, compliance, money movement, and reporting — designed as one system.
+      </p>
+    </div>
+    <div class="features__grid">
+      <article class="feature reveal" #reveal *ngFor="let f of features; let i = index"
+               [style.--i]="i">
+        <div class="feature__icon" [attr.data-icon]="f.icon"></div>
+        <h3>{{ f.title }}</h3>
+        <p>{{ f.body }}</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- CTA BAND -->
+  <section class="cta-band reveal" #reveal>
+    <div class="cta-band__inner">
+      <div>
+        <p class="eyebrow">Ready when you are</p>
+        <h2>Start browsing the fleet — or list your first machine.</h2>
+        <p>
+          Join the EquaMeridian equipment marketplace. Contractors find capacity.
+          Suppliers reach demand. Admins keep the platform accountable.
+        </p>
+      </div>
+      <div class="cta-band__actions">
+        <a routerLink="/browse" class="btn-hero btn-hero--primary">Explore listings</a>
+        <a routerLink="/auth/login" class="btn-hero btn-hero--ghost">Sign in</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT STRIP -->
+  <section class="about-strip reveal" #reveal>
+    <div class="about-strip__inner">
+      <div class="about-strip__brand" aria-label="EquaMeridian Holdings">
+        <img
+          class="about-strip__mark"
+          src="assets/brand/logo-mark.png"
+          width="72"
+          height="72"
+          alt=""
+        />
+        <div class="about-strip__wordmark">
+          <span class="about-strip__name">EquaMeridian</span>
+          <span class="about-strip__holdings">Holdings</span>
+        </div>
+      </div>
+      <p class="about-strip__text">
+        Physical delivery. Digital capability. Equipment hire, commodities, and software —
+        built for organisations that move real work on the ground.
+      </p>
+      <a
+        href="https://www.equameridianholdings.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="about-strip__link"
+      >
+        Visit corporate site
+        <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </section>
+</div>

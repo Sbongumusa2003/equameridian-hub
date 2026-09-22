@@ -1,0 +1,54 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <a routerLink="/" class="auth-back-home">
+      <span aria-hidden="true">←</span> Back to marketplace
+    </a>
+        <div class="auth-card__logo">
+      <img class="brand-logo brand-logo--auth" src="assets/brand/logo-mark.png" width="56" height="56" alt="EquaMeridian Holdings" />
+      <span class="logo-text">EquaMeridian Hub</span>
+    </div>
+
+    <ng-container *ngIf="missingReference">
+      <h2 class="auth-card__title">Verification Session Expired</h2>
+      <div class="alert alert--error">
+        We couldn't find your login session. Please sign in again.
+      </div>
+      <button class="btn btn--primary btn--full" (click)="backToLogin()">Back to Sign In</button>
+    </ng-container>
+
+    <ng-container *ngIf="!missingReference">
+      <h2 class="auth-card__title">Two-Factor Verification</h2>
+      <p class="auth-card__subtitle">Enter the 6-digit code sent to your device to finish signing in.</p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="form-group">
+          <label>Verification Code <span class="required">*</span></label>
+          <input type="text" inputmode="numeric" maxlength="6" formControlName="code"
+                 placeholder="000000"
+                 [class.is-invalid]="form.get('code')?.touched && form.get('code')?.invalid" />
+          <div class="field-error" *ngIf="codeError">{{ codeError }}</div>
+        </div>
+
+        <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+        <div class="alert alert--success" *ngIf="resendMessage">{{ resendMessage }}</div>
+        <div class="alert alert--error" *ngIf="resendError">{{ resendError }}</div>
+
+        <button type="submit" class="btn btn--primary btn--full" [disabled]="loading">
+          {{ loading ? 'Verifying...' : 'Verify & Sign In' }}
+        </button>
+
+        <p class="auth-card__footer-link">
+          <ng-container *ngIf="canResend; else cooldown">
+            <a class="link" (click)="resend()">{{ resending ? 'Sending...' : "Didn't get a code? Resend" }}</a>
+          </ng-container>
+          <ng-template #cooldown>
+            <span class="text-muted">Resend available in {{ resendCooldown }}s</span>
+          </ng-template>
+        </p>
+        <p class="auth-card__footer-link">
+          <a class="link" (click)="backToLogin()">Back to Sign In</a>
+        </p>
+      </form>
+    </ng-container>
+  </div>
+</div>
