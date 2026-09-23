@@ -6,7 +6,11 @@ services:
     staticPublishPath: dist/equameridian-hub/browser
     pullRequestPreviewsEnabled: false
     routes:
-      # SPA fallback so deep links / refreshes (e.g. /payments/success) work
+      # Explicit PayFast return/cancel paths (must serve SPA, not 404)
+      - type: rewrite
+        source: /payments/*
+        destination: /index.html
+      # SPA fallback for all other client-side routes
       - type: rewrite
         source: /*
         destination: /index.html
