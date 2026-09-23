@@ -1,0 +1,25 @@
+services:
+  - type: web
+    runtime: static
+    name: equameridian-hub
+    buildCommand: npm ci && npm run build -- --configuration production
+    staticPublishPath: dist/equameridian-hub/browser
+    pullRequestPreviewsEnabled: false
+    routes:
+      # SPA fallback so deep links / refreshes (e.g. /payments/success) work
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*.js
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*.css
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
