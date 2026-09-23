@@ -1,12 +1,14 @@
-<div class="public-shell">
-  <header class="public-header" [class.public-header--solid]="true">
-    <a routerLink="/" class="public-header__brand">
+<div class="public-shell" [class.menu-open]="menuOpen">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="public-header">
+    <a routerLink="/" class="public-header__brand" (click)="closeMenu()">
       <img
         class="brand-logo brand-logo--header"
         src="assets/brand/logo-mark.png"
         width="36"
         height="36"
-        alt="EquaMeridian Holdings"
+        alt=""
       />
       <span class="logo-text">
         <span class="logo-text__name">EquaMeridian</span>
@@ -14,13 +16,38 @@
       </span>
     </a>
 
-    <nav class="public-header__nav" aria-label="Primary">
-      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-      <a routerLink="/browse" routerLinkActive="is-active">Browse machinery</a>
-      <a href="#how-it-works" class="nav-anchor" *ngIf="isHome">How it works</a>
+    <button
+      type="button"
+      class="public-header__toggle"
+      [attr.aria-expanded]="menuOpen"
+      aria-controls="public-nav"
+      aria-label="Toggle navigation"
+      (click)="toggleMenu()"
+    >
+      <span class="public-header__toggle-bar" aria-hidden="true"></span>
+      <span class="public-header__toggle-bar" aria-hidden="true"></span>
+      <span class="public-header__toggle-bar" aria-hidden="true"></span>
+    </button>
+
+    <nav id="public-nav" class="public-header__nav" aria-label="Primary" [class.is-open]="menuOpen">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Home</a>
+      <a routerLink="/browse" routerLinkActive="is-active" (click)="closeMenu()">Browse machinery</a>
+      <a href="#how-it-works" class="nav-anchor" *ngIf="isHome" (click)="closeMenu()">How it works</a>
+
+      <div class="public-header__nav-actions">
+        <ng-container *ngIf="!auth.isLoggedIn; else loggedInNav">
+          <a routerLink="/auth/login" class="btn-nav btn-nav--ghost" (click)="closeMenu()">Log in</a>
+          <a routerLink="/auth/register" class="btn-nav btn-nav--solid" (click)="closeMenu()">Register</a>
+        </ng-container>
+        <ng-template #loggedInNav>
+          <button type="button" class="btn-nav btn-nav--solid" (click)="closeMenu(); auth.redirectByRole()">
+            Go to dashboard
+          </button>
+        </ng-template>
+      </div>
     </nav>
 
-    <div class="public-header__actions">
+    <div class="public-header__actions public-header__actions--desktop">
       <ng-container *ngIf="!auth.isLoggedIn; else loggedIn">
         <a routerLink="/auth/login" class="btn-nav btn-nav--ghost">Log in</a>
         <a routerLink="/auth/register" class="btn-nav btn-nav--solid">Register</a>
@@ -32,6 +59,8 @@
       </ng-template>
     </div>
   </header>
+
+  <div class="public-header__backdrop" *ngIf="menuOpen" (click)="closeMenu()" aria-hidden="true"></div>
 
   <main id="main-content" tabindex="-1" class="public-main">
     <router-outlet></router-outlet>

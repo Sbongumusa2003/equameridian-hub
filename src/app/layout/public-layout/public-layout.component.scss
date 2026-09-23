@@ -1,3 +1,20 @@
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  background: #c9a227;
+  color: #1a1408;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 0 0 6px 0;
+
+  &:focus {
+    left: 0;
+  }
+}
+
 .brand-logo {
   display: block;
   object-fit: contain;
@@ -52,20 +69,21 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   background: #f4f0e8;
+  overflow-x: clip;
 }
 
 .public-header {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 0.75rem 1.5rem;
+  gap: 0.75rem 1.25rem;
+  padding: 0.65rem clamp(0.85rem, 3vw, 1.5rem);
   background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   position: sticky;
   top: 0;
   z-index: 50;
-  flex-wrap: wrap;
   backdrop-filter: blur(12px);
   box-shadow: 0 1px 0 rgba(201, 162, 39, 0.12);
 
@@ -75,10 +93,36 @@
     gap: 0.65rem;
     text-decoration: none;
     margin-right: auto;
+    min-width: 0;
+  }
+
+  &__toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 42px;
+    height: 42px;
+    padding: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &-bar {
+      display: block;
+      height: 2px;
+      width: 100%;
+      background: #1a1814;
+      border-radius: 1px;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
   }
 
   &__nav {
     display: flex;
+    align-items: center;
     gap: 0.25rem;
 
     a {
@@ -89,6 +133,7 @@
       padding: 0.45rem 0.75rem;
       border-radius: 6px;
       transition: color 0.15s ease, background 0.15s ease;
+      white-space: nowrap;
 
       &.is-active,
       &:hover {
@@ -98,10 +143,19 @@
     }
   }
 
+  &__nav-actions {
+    display: none;
+  }
+
   &__actions {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  &__backdrop {
+    display: none;
   }
 }
 
@@ -110,9 +164,10 @@
   align-items: baseline;
   gap: 0.35rem;
   line-height: 1;
+  min-width: 0;
 
   &__name {
-    font-size: 0.95rem;
+    font-size: clamp(0.82rem, 2.5vw, 0.95rem);
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -120,7 +175,7 @@
   }
 
   &__hub {
-    font-size: 0.78rem;
+    font-size: clamp(0.7rem, 2vw, 0.78rem);
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -131,7 +186,9 @@
 .btn-nav {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 0.5rem 0.95rem;
+  min-height: 40px;
   border-radius: 7px;
   font-size: 0.82rem;
   font-weight: 700;
@@ -139,6 +196,7 @@
   border: none;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
 
   &--ghost {
     background: transparent;
@@ -165,10 +223,11 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: clamp(12px, 3vw, 20px);
+  min-width: 0;
 }
 
-/* Full-bleed when landing is active — landing component offsets padding */
+/* Full-bleed when landing is active */
 .public-main:has(app-landing) {
   max-width: none;
   padding: 0;
@@ -182,7 +241,7 @@
   &__top {
     max-width: 1120px;
     margin: 0 auto;
-    padding: 2.5rem 1.5rem 1.75rem;
+    padding: 2.5rem clamp(1rem, 4vw, 1.5rem) 1.75rem;
     display: grid;
     grid-template-columns: 1.2fr 2fr;
     gap: 2rem;
@@ -217,6 +276,7 @@
       text-decoration: none;
       font-size: 0.88rem;
       margin-bottom: 0.45rem;
+      padding: 0.15rem 0;
 
       &:hover {
         color: #e0c36a;
@@ -226,16 +286,89 @@
 
   &__bottom {
     border-top: 1px solid rgba(201, 162, 39, 0.12);
-    padding: 1rem 1.5rem;
+    padding: 1rem clamp(1rem, 4vw, 1.5rem);
     text-align: center;
     font-size: 0.75rem;
     color: rgba(247, 244, 238, 0.4);
   }
 }
 
+/* ── Tablet and below: collapsible nav ──────────────────────────────────── */
 @media (max-width: 768px) {
-  .public-header__nav .nav-anchor {
-    display: none;
+  .public-header {
+    flex-wrap: nowrap;
+
+    &__toggle {
+      display: flex;
+    }
+
+    &__actions--desktop {
+      display: none;
+    }
+
+    &__nav {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(300px, 86vw);
+      max-width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.15rem;
+      padding: 4.5rem 1.1rem 1.5rem;
+      background: #fff;
+      box-shadow: -12px 0 40px rgba(0, 0, 0, 0.12);
+      transform: translateX(105%);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 60;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+
+      &.is-open {
+        transform: translateX(0);
+      }
+
+      a {
+        padding: 0.85rem 0.9rem;
+        font-size: 0.95rem;
+        border-radius: 8px;
+      }
+    }
+
+    &__nav-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+      .btn-nav {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+      }
+    }
+
+    &__backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(14, 13, 11, 0.45);
+      z-index: 55;
+      animation: fadeIn 0.2s ease;
+    }
+  }
+
+  .public-shell.menu-open .public-header__toggle-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .public-shell.menu-open .public-header__toggle-bar:nth-child(2) {
+    opacity: 0;
+  }
+  .public-shell.menu-open .public-header__toggle-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
   }
 
   .public-footer__top {
@@ -247,10 +380,27 @@
   }
 }
 
-@media (max-width: 520px) {
-  .public-header__nav {
-    order: 3;
-    width: 100%;
-    overflow-x: auto;
+@media (max-width: 400px) {
+  .public-footer__cols {
+    grid-template-columns: 1fr;
+  }
+
+  .logo-text__hub {
+    display: none;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .public-header__nav,
+  .public-header__backdrop,
+  .btn-nav {
+    transition: none !important;
+    animation: none !important;
   }
 }
