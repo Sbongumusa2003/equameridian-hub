@@ -1,3 +1,4 @@
+
 .image-upload-grid {
   display: flex;
   gap: 10px;
@@ -10,15 +11,64 @@
   height: 80px;
   background: #f0f0f0;
   border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+
+  &--preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &__remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    padding: 0;
+    line-height: 1;
+    -webkit-tap-highlight-color: transparent;
+
+    @media (hover: hover) and (pointer: fine) {
+      opacity: 0;
+    }
+  }
+
+  &--preview:hover &__remove,
+  &--preview:focus-within &__remove {
+    opacity: 1;
+  }
 
   &--add {
     border: 2px dashed #ddd;
     background: none;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     font-size: 24px;
     color: #bbb;
     cursor: pointer;
+    gap: 4px;
+    transition: border-color 0.15s, color 0.15s;
+
+    &:hover {
+      border-color: #c84b11;
+      color: #c84b11;
+    }
   }
 }

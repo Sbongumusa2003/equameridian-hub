@@ -14,15 +14,17 @@
   }
 
   select {
-    min-width: 140px;
+    min-width: min(100%, 140px);
+    max-width: 100%;
   }
 
   &__search {
     flex: 1 1 200px;
-    min-width: 180px;
+    min-width: min(100%, 160px);
 
     input {
       width: 100%;
+      min-height: 44px;
     }
   }
 
@@ -31,6 +33,18 @@
     gap: 8px;
     flex-shrink: 0;
     padding-bottom: 1px; /* optical align with inputs */
+  }
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    &__search { min-width: 0; }
+    select, .btn { width: 100%; }
+    &__actions {
+      flex-direction: column;
+      .btn { width: 100%; }
+    }
   }
 }
 

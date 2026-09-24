@@ -3,7 +3,7 @@
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 8px 24px 48px;
+  padding: 8px clamp(12px, 3vw, 24px) 48px;
 }
 
 .filter-bar {
@@ -11,15 +11,29 @@
   gap: 12px;
   flex-wrap: wrap;
   margin: 16px 0 20px;
+  align-items: flex-end;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    .filter-bar__search,
+    .filter-select,
+    .btn {
+      width: 100%;
+      min-width: 0;
+    }
+  }
 }
 
 .filter-bar__search {
   flex: 1;
-  min-width: 220px;
+  min-width: min(100%, 200px);
 
   .search-input {
     width: 100%;
     padding: 10px 14px;
+    min-height: 44px;
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 14px;
@@ -28,17 +42,24 @@
 
 .filter-select {
   padding: 10px 14px;
+  min-height: 44px;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 14px;
   background: #fff;
-  min-width: 180px;
+  min-width: min(100%, 160px);
+  max-width: 100%;
 }
 
 .listing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: 20px;
+
+  @media (max-width: 400px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .listing-card {
@@ -107,6 +128,17 @@
   align-items: center;
   gap: 8px;
   margin-top: auto;
+  flex-wrap: wrap;
+
+  @media (max-width: 400px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    .listing-card__actions {
+      width: 100%;
+      .btn { flex: 1; justify-content: center; }
+    }
+  }
 }
 
 .listing-card__price {

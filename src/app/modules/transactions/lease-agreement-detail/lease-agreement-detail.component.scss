@@ -6,13 +6,60 @@
   background: #fff;
   border: 1px solid #e7e5e4;
   border-radius: 12px;
+
+  @media (max-width: 640px) {
+    padding: 16px;
+  }
 }
-.invoice-slip__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.invoice-slip__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+  }
+}
 .invoice-slip__brand { font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; }
 .invoice-slip__kicker { color: #6b7280; font-size: .85rem; margin-top: 2px; }
-.invoice-slip__meta { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 16px 0; font-size: .85rem; }
+.invoice-slip__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+  font-size: .85rem;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 400px) {
+    grid-template-columns: 1fr;
+  }
+}
 .invoice-slip__meta span { display: block; color: #9ca3af; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
-.invoice-slip__item { display: flex; justify-content: space-between; gap: 12px; padding: 14px 0; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; }
-.invoice-slip__lines { margin-top: 8px; max-width: 320px; margin-left: auto; }
+.invoice-slip__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f3f4f6;
+
+  @media (max-width: 400px) {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+.invoice-slip__lines {
+  margin-top: 8px;
+  max-width: 320px;
+  margin-left: auto;
+
+  @media (max-width: 640px) {
+    max-width: 100%;
+    margin-left: 0;
+  }
+}
 .invoice-slip__line { display: flex; justify-content: space-between; padding: 5px 0; font-size: .9rem; color: #374151; }
 .invoice-slip__line--total { border-top: 2px solid #111; margin-top: 8px; padding-top: 10px; font-size: 1.05rem; }

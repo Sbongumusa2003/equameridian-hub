@@ -508,6 +508,28 @@
   .kpi-card__value {
     font-size: 1.25rem;
   }
+
+  .reports-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-bar,
+  .report-filters {
+    flex-direction: column;
+    align-items: stretch;
+
+    .btn, select, input, .search-input {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .kpi-grid,
+  .stat-cards {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 

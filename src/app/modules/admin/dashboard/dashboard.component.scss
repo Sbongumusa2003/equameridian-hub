@@ -335,6 +335,11 @@
 @media (max-width: 720px) {
   .needs-grid { grid-template-columns: 1fr 1fr; }
 }
+@media (max-width: 400px) {
+  .needs-grid { grid-template-columns: 1fr; }
+  .bar-row { grid-template-columns: 1fr; gap: 0.25rem; }
+  .bar-value { text-align: left; }
+}
 
 .chart-toolbar {
   display: flex;

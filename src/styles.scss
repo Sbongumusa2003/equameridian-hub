@@ -520,12 +520,22 @@ textarea.is-invalid {
 }
 
 .pagination {
-  display: flex; gap: 4px;
+  display: flex; gap: 4px; flex-wrap: wrap;
+
   button {
-    width: 32px; height: 32px; border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border-strong); background: var(--color-surface); font-size: 13px; cursor: pointer;
+    width: 36px; height: 36px; min-width: 36px; min-height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border-strong); background: var(--color-surface);
+    font-size: 13px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+
     &.active { background: var(--color-primary); color: var(--color-surface); border-color: var(--color-primary); }
     &:disabled { opacity: 0.4; cursor: default; }
+
+    @include mq(sm) {
+      width: 40px; height: 40px; min-width: 40px; min-height: 40px;
+    }
   }
 }
 
@@ -780,30 +790,49 @@ textarea.is-invalid {
 .dropdown-wrapper { position: relative; }
 
 .dropdown-trigger {
-  width: 100%; padding: 10px 14px; background: var(--color-surface);
+  width: 100%; padding: 10px 14px; min-height: 44px; background: var(--color-surface);
   border: 1px solid var(--color-primary); border-radius: var(--radius-md);
   font-size: 14px; cursor: pointer; text-align: left;
   color: var(--color-primary); font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .dropdown-menu {
   position: absolute; top: 100%; left: 0; right: 0;
   background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md);
   box-shadow: var(--shadow-md); z-index: var(--z-dropdown); overflow: hidden;
+  max-width: 100vw;
 }
 
 .dropdown-item {
-  padding: 10px 14px; cursor: pointer; font-size: 14px;
+  padding: 12px 14px; min-height: 44px; cursor: pointer; font-size: 14px;
   display: flex; justify-content: space-between; align-items: center;
-  &:hover { background: var(--color-surface-alt); }
+  -webkit-tap-highlight-color: transparent;
+  &:hover, &:focus-visible { background: var(--color-surface-alt); outline: none; }
   &.current { font-weight: 500; }
   .current-tag { font-size: 11px; color: var(--color-text-muted); }
 }
 
 /* Modifier for autocomplete-style dropdowns (e.g. a recipient search) that
    need to scroll instead of growing unbounded. */
-.dropdown-menu--scroll { max-height: 220px; overflow-y: auto; }
-.dropdown-empty { padding: 8px 12px; color: var(--color-text-muted); font-size: 13px; }
+.dropdown-menu--scroll {
+  max-height: min(220px, 50vh);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.dropdown-empty { padding: 12px 14px; color: var(--color-text-muted); font-size: 13px; }
+
+/* Clickable table rows — larger hit area on touch */
+.cursor-pointer {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.data-table tbody tr.cursor-pointer td {
+  @include mq(sm) {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+}
 
 .breadcrumb {
   display: flex; gap: 8px; align-items: center;
@@ -1071,6 +1100,31 @@ button.icon-only {
   justify-content: center;
 }
 
+/* Prevent iOS Safari auto-zoom on focus (requires ≥16px) while keeping desktop density */
+@include mq(sm) {
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .search-input,
+  .filter-select,
+  .promo-input,
+  .qty-input {
+    font-size: 16px;
+  }
+}
+
+
+/* Keep page content clear of fixed chatbot FAB on small screens */
+@include mq(sm) {
+  .main-content {
+    padding-bottom: max(80px, env(safe-area-inset-bottom, 0px) + 64px);
+  }
+
+  .public-main {
+    padding-bottom: max(80px, env(safe-area-inset-bottom, 0px) + 64px);
+  }
+}
+
 @media print {
   .chatbot,
   .toast-stack,
@@ -1080,3 +1134,4 @@ button.icon-only {
   .chatbot__fab { display: none !important; }
   body { background: #fff; }
 }
+

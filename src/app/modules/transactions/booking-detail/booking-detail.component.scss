@@ -3,7 +3,12 @@
 .handover-box { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid #ece7df; border-radius: 10px; background: #fafafa; }
 .handover-box textarea, .handover-box select { width: 100%; }
 
-.tracker-panel { overflow: auto; padding-bottom: 8px; }
+.tracker-panel {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
 .tracker {
   display: flex;
   align-items: flex-start;

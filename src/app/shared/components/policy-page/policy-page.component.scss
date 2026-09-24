@@ -1,11 +1,20 @@
+
 .policy-page {
   max-width: 780px;
   margin: 0 auto;
   padding: 24px 16px 48px;
+
+  @media (max-width: 640px) {
+    padding: 16px 12px 40px;
+  }
 }
 
 .policy-page__panel {
   padding: 32px;
+
+  @media (max-width: 640px) {
+    padding: 20px 16px;
+  }
 }
 
 .policy-page__updated {

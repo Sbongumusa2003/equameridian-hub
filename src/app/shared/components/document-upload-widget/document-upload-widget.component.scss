@@ -177,3 +177,27 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+@media (max-width: 640px) {
+  .doc-upload-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .doc-upload-row__filename {
+    max-width: 100%;
+  }
+
+  .doc-upload-row select {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .doc-widget__checklist {
+    gap: 6px;
+  }
+
+  .upload-zone {
+    padding: 18px 12px;
+  }
+}

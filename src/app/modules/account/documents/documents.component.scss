@@ -80,8 +80,18 @@
   border-left: 3px solid #ddd;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .docs-layout {
     grid-template-columns: 1fr;
+  }
+
+  .upload-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 400px) {
+  .upload-zone {
+    padding: 20px 14px;
   }
 }

@@ -11,6 +11,24 @@
   position: relative; overflow: hidden;
 
   img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-md); }
+
+  @media (max-width: 400px) {
+    height: 200px;
+    border-radius: var(--radius-sm);
+  }
+}
+
+.listing-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 400px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .listing-card__image--unavailable img,
