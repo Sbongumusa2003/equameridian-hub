@@ -1,10 +1,13 @@
 .auth-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: #f2efe8;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px 16px;
+  padding-top: max(40px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 0px));
 
   @media (max-width: 480px) { padding: 24px 12px; }
 }
@@ -17,9 +20,12 @@
   max-width: 460px;
   box-shadow: 0 2px 24px rgba(0,0,0,0.06);
 
-  @media (max-width: 480px) { padding: 24px; border-radius: 12px; }
+  @media (max-width: 480px) {
+    padding: 24px 18px;
+    border-radius: 12px;
+  }
 
-  &--wide { max-width: 580px; }
+  &--wide { max-width: min(580px, 100%); }
 
   &__logo {
     display: flex;
@@ -62,7 +68,8 @@
 
 .auth-tab {
   flex: 1;
-  padding: 12px 20px;
+  padding: 12px 16px;
+  min-height: 44px;
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;

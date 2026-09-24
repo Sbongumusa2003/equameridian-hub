@@ -1,13 +1,15 @@
 .chatbot {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
   z-index: 60;
 }
 
 .chatbot__fab {
   width: 52px;
   height: 52px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
   border: none;
   background: var(--color-primary);
@@ -19,6 +21,7 @@
   align-items: center;
   justify-content: center;
   transition: background var(--transition-fast, 0.15s);
+  -webkit-tap-highlight-color: transparent;
 
   &:hover { background: var(--color-primary-hover); }
 }
@@ -28,15 +31,31 @@
   right: 0;
   bottom: 64px;
   width: 340px;
-  max-width: calc(100vw - 40px);
+  max-width: calc(100vw - 32px);
   height: 460px;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100dvh - 120px);
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-modal);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .chatbot__panel {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    bottom: 0;
+    right: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 .chatbot__header {

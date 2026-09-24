@@ -2,13 +2,23 @@ $collapse: 960px;
 
 .toast-stack {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  left: auto;
   z-index: 100;
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: min(340px, calc(100vw - 32px));
+  pointer-events: none;
+
+  > * { pointer-events: auto; }
+
+  @media (max-width: 480px) {
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
 }
 
 .toast-card {
@@ -56,27 +66,39 @@ $collapse: 960px;
 .topbar {
   display: none;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   position: sticky;
   top: 0;
   z-index: 40;
-  height: 56px;
+  min-height: 56px;
+  height: auto;
   padding: 0 12px;
+  padding-top: env(safe-area-inset-top, 0);
   background: #1a1a1a;
   color: #fff;
 
   &__menu-btn {
-    background: none; border: none; padding: 8px; cursor: pointer;
+    background: none; border: none;
+    min-width: 44px; min-height: 44px; padding: 8px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  &__brand { font-family: monospace; font-size: 14px; font-weight: 700; flex: 1; }
+  &__brand {
+    font-family: monospace; font-size: 14px; font-weight: 700; flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   &__bell {
     position: relative; color: #ccc; text-decoration: none; font-size: 18px;
-    display: flex; align-items: center; justify-content: center; padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    min-width: 44px; min-height: 44px; padding: 8px;
+    -webkit-tap-highlight-color: transparent;
 
-    .nav-badge { position: absolute; top: -2px; right: -4px; }
+    .nav-badge { position: absolute; top: 4px; right: 4px; }
   }
 
   @media (max-width: $collapse) { display: flex; }
@@ -225,9 +247,11 @@ $collapse: 960px;
 }
 
 .nav-link {
-  display: block;
+  display: flex;
+  align-items: center;
   margin: 1px 8px;
-  padding: 8px 12px;
+  padding: 10px 12px;
+  min-height: 44px;
   color: #aaa;
   text-decoration: none;
   font-size: 14px;
@@ -242,7 +266,7 @@ $collapse: 960px;
     background: #c84b11;
   }
 
-  &--badge { display: flex; align-items: center; justify-content: space-between; }
+  &--badge { justify-content: space-between; }
 }
 
 .nav-badge {
