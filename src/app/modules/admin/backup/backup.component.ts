@@ -18,6 +18,7 @@ export class AdminBackupComponent implements OnInit {
   restoreTarget: BackupFileDto | null = null;
   restoreConfirmText = '';
   restoring = false;
+  deletingName: string | null = null;
 
   constructor(private backupService: BackupService) {}
 
@@ -48,7 +49,7 @@ export class AdminBackupComponent implements OnInit {
     this.backupService.create().subscribe({
       next: backup => {
         this.creating = false;
-        this.message = `Backup "${backup.fileName}" created.`;
+        this.message = `Backup "${backup.fileName}" created (${this.formatSize(backup.sizeBytes)}).`;
         this.load();
       },
       error: err => {
@@ -56,7 +57,7 @@ export class AdminBackupComponent implements OnInit {
         this.error = err?.error?.message
           || (err?.status === 403
             ? 'You do not have permission to create backups.'
-            : 'Could not create a backup. Ensure SQL Server allows BACKUP and Backup:Directory is writable.');
+            : 'Could not create a backup. Ensure Backup:Directory is writable on the API host.');
       }
     });
   }
@@ -66,6 +67,27 @@ export class AdminBackupComponent implements OnInit {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  }
+
+  download(backup: BackupFileDto) {
+    this.backupService.download(backup.fileName);
+  }
+
+  deleteBackup(backup: BackupFileDto) {
+    if (!confirm(`Delete backup "${backup.fileName}"? This cannot be undone.`)) return;
+    this.deletingName = backup.fileName;
+    this.error = '';
+    this.backupService.delete(backup.fileName).subscribe({
+      next: () => {
+        this.deletingName = null;
+        this.message = `Deleted "${backup.fileName}".`;
+        this.load();
+      },
+      error: err => {
+        this.deletingName = null;
+        this.error = err?.error?.message ?? 'Could not delete this backup.';
+      }
+    });
   }
 
   openRestore(backup: BackupFileDto) {
@@ -82,15 +104,20 @@ export class AdminBackupComponent implements OnInit {
     if (!this.restoreTarget || this.restoreConfirmText !== this.restoreTarget.fileName) return;
     this.restoring = true;
     this.error = '';
-    this.backupService.restore({ fileName: this.restoreTarget.fileName, confirmOverride: true }).subscribe({
-      next: () => {
+    this.backupService.restore({
+      fileName: this.restoreTarget.fileName,
+      confirmOverride: true
+    }).subscribe({
+      next: res => {
         this.restoring = false;
-        this.message = `Database restored from "${this.restoreTarget?.fileName}".`;
+        this.message = res?.message || `Database restored from "${this.restoreTarget?.fileName}".`;
         this.restoreTarget = null;
       },
       error: err => {
         this.restoring = false;
-        this.error = err?.error?.message ?? 'Could not restore from this backup.';
+        this.error = err?.error?.message
+          || err?.error?.detail
+          || 'Could not restore from this backup.';
       }
     });
   }
