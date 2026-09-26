@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DocumentService, DocumentReviewListItemDto, DocumentReviewDetailDto } from '../../../core/services/document.service';
-import { environment } from '../../../../environments/environment';
+import { DocumentService, DocumentReviewListItemDto } from '../../../core/services/document.service';
 
 @Component({
   selector: 'app-admin-documents',
@@ -19,9 +18,6 @@ export class AdminDocumentsComponent implements OnInit {
   reviewingDocId: number | null = null;
   message = '';
   error = '';
-
-  // The API serves uploaded files as static content off the host root, not under /api.
-  readonly fileBaseUrl = environment.apiUrl.replace(/\/api\/?$/, '');
 
   constructor(private documentService: DocumentService) {}
 
@@ -51,11 +47,13 @@ export class AdminDocumentsComponent implements OnInit {
   }
 
   viewDocument(docId: number) {
-    this.documentService.adminGetById(docId).subscribe({
-      next: (doc: DocumentReviewDetailDto) => {
-        window.open(`${this.fileBaseUrl}${doc.filePath}`, '_blank');
+    this.error = '';
+    this.documentService.adminDownloadFile(docId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
       },
-      error: () => { this.error = 'Could not open this document.'; }
+      error: () => { this.error = 'Could not open this document. It may be missing or still uploading.'; }
     });
   }
 

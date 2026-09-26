@@ -95,4 +95,18 @@ export class DocumentService {
   adminReview(docId: number, decision: 'Accepted' | 'Rejected', reason?: string): Observable<any> {
     return this.http.post(`${this.adminUrl}/${docId}/review`, { decision, reason });
   }
+
+  /**
+   * Streams the document's bytes through the authenticated API (JWT via the auth
+   * interceptor) instead of the old public /uploads static path, which 404s on Render
+   * after a redeploy since the disk is ephemeral.
+   */
+  adminDownloadFile(docId: number): Observable<Blob> {
+    return this.http.get(`${this.adminUrl}/${docId}/file`, { responseType: 'blob' });
+  }
+
+  /** Same as adminDownloadFile but scoped to the signed-in user's own documents. */
+  downloadMyFile(docId: number): Observable<Blob> {
+    return this.http.get(`${this.url}/${docId}/file`, { responseType: 'blob' });
+  }
 }

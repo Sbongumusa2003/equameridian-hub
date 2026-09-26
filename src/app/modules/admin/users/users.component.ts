@@ -10,7 +10,6 @@ import {
   DocumentReviewListItemDto,
   RequiredDocumentStatusDto
 } from '../../../core/services/document.service';
-import { environment } from '../../../../environments/environment';
 
 export interface AuditLogEntry {
   auditID: number;
@@ -52,7 +51,6 @@ export class UsersComponent implements OnInit, OnDestroy {
   rejectReason = '';
   docMessage = '';
   docError = '';
-  readonly fileBaseUrl = environment.apiUrl.replace(/\/api\/?$/, '');
 
   // --- Create internal (admin) user ---
   showCreateModal = false;
@@ -253,9 +251,13 @@ export class UsersComponent implements OnInit, OnDestroy {
   }
 
   viewDocument(docId: number) {
-    this.documentService.adminGetById(docId).subscribe({
-      next: doc => window.open(`${this.fileBaseUrl}${doc.filePath}`, '_blank'),
-      error: () => { this.docError = 'Could not open this document.'; }
+    this.docError = '';
+    this.documentService.adminDownloadFile(docId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      },
+      error: () => { this.docError = 'Could not open this document. It may be missing or still uploading.'; }
     });
   }
 
