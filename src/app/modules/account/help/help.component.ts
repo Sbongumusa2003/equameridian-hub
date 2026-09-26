@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { HelpService, HelpSection } from '../../../core/services/help.service';
 
 /**
@@ -19,17 +18,7 @@ export class HelpComponent implements OnInit {
   results: HelpSection[] = [];
   activeSectionId: string | null = null;
 
-  // TODO: replace with your own recorded walkthrough video's YouTube ID before the demo.
-  // Record a 2-3 minute screen-share of the core rental flow, upload as "Unlisted" on YouTube,
-  // and swap the ID below (the part after "v=" in a normal YouTube URL).
-  private readonly videoId = 'YOUR_VIDEO_ID_HERE';
-  videoEmbedUrl: SafeResourceUrl;
-
-  constructor(private help: HelpService, private route: ActivatedRoute, private sanitizer: DomSanitizer) {
-    this.videoEmbedUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-      `https://www.youtube.com/embed/${this.videoId}`
-    );
-  }
+  constructor(private help: HelpService, private route: ActivatedRoute) {}
 
   get categories(): string[] {
     return Array.from(new Set(this.results.map(s => s.category)));
