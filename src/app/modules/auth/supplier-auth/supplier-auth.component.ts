@@ -120,7 +120,8 @@ export class SupplierAuthComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.documentService.getDocumentTypes().subscribe({
+    // Request Supplier-specific document types so required docs match backend validation.
+    this.documentService.getDocumentTypes('Supplier').subscribe({
       next: types => this.documentTypes = types,
       error: () => this.documentTypes = []
     });
@@ -242,6 +243,7 @@ export class SupplierAuthComponent implements OnInit {
       email,
       companyName,
       password,
+      phoneNumber: phone || undefined,
       documents: validDocs.map(d => d.file as File),
       docTypeIds: validDocs.map(d => d.docTypeId as number)
     }).subscribe({

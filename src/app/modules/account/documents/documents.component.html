@@ -100,7 +100,14 @@
             <td>
               <app-status-badge [status]="doc.verificationStatus"></app-status-badge>
             </td>
-            <td>
+            <td class="actions-cell">
+              <a class="btn btn--sm btn--ghost"
+                 [href]="fileUrl(doc)"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 title="View or download this document">
+                View
+              </a>
               <button class="btn btn--sm btn--outline"
                       [disabled]="replacing && replacingDocId === doc.docID"
                       (click)="startReplace(doc.docID)">

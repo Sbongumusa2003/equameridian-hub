@@ -1,5 +1,6 @@
 import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { DocumentService, DocumentDto, DocumentTypeDto } from '../../../core/services/document.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-documents',
@@ -138,6 +139,16 @@ export class DocumentsComponent implements OnInit {
         this.replacing = false;
       }
     });
+  }
+
+
+  /** Absolute URL for viewing/downloading an uploaded document (static /uploads path). */
+  fileUrl(doc: DocumentDto): string {
+    if (!doc?.filePath) return '#';
+    const path = doc.filePath.startsWith('/') ? doc.filePath : `/${doc.filePath}`;
+    // apiUrl ends with /api — strip it so /uploads is served from the API host root.
+    const base = (environment.apiUrl || '').replace(/\/api\/?$/, '');
+    return `${base}${path}`;
   }
 
   cancelReplace(): void {
