@@ -40,6 +40,10 @@ export class UsersComponent implements OnInit, OnDestroy {
   auditLogs: AuditLogEntry[] = [];
   loadingAudit = false;
   statusError = '';
+  /** Number of non-Completed / non-Cancelled bookings the selected user is involved in. */
+  activeBookingsCount = 0;
+  canDisableSelectedUser = true;
+  loadingBookingSummary = false;
 
   // --- Document review (folded into Manage modal) ---
   documents: DocumentReviewListItemDto[] = [];
@@ -153,7 +157,10 @@ export class UsersComponent implements OnInit, OnDestroy {
     this.selectedRoleName = user.role;
     this.roleChangeError = '';
     this.roleChangeMessage = '';
+    this.activeBookingsCount = 0;
+    this.canDisableSelectedUser = true;
     this.loadAuditLog(user.userID);
+    this.loadBookingSummary(user.userID);
     // Admins and other internal/company-side roles are never required to
     // upload verification documents, so don't fetch or show that panel for them.
     if (this.isDocGatedRole(user.role)) {
@@ -163,6 +170,22 @@ export class UsersComponent implements OnInit, OnDestroy {
       this.checklist = [];
       this.allRequiredApproved = false;
     }
+  }
+
+  private loadBookingSummary(userId: number) {
+    this.loadingBookingSummary = true;
+    this.userService.getBookingSummary(userId).subscribe({
+      next: summary => {
+        this.activeBookingsCount = summary.activeBookings;
+        this.canDisableSelectedUser = summary.canDisable;
+        this.loadingBookingSummary = false;
+      },
+      error: () => {
+        this.activeBookingsCount = 0;
+        this.canDisableSelectedUser = true;
+        this.loadingBookingSummary = false;
+      }
+    });
   }
 
   closeManage() {
@@ -177,6 +200,8 @@ export class UsersComponent implements OnInit, OnDestroy {
     this.docError = '';
     this.roleChangeError = '';
     this.roleChangeMessage = '';
+    this.activeBookingsCount = 0;
+    this.canDisableSelectedUser = true;
   }
 
   private isDocGatedRole(role: string): boolean {
