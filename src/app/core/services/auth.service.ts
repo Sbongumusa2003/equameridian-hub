@@ -48,6 +48,9 @@ export class AuthService {
   /** True only when a non-expired session exists — required so public browse does not send dead JWTs. */
   get isLoggedIn(): boolean               { return !!this.currentUser; }
 
+  /** True when a Disabled Supplier/Contractor holds a short-lived document-upload-only session. */
+  get isRestricted(): boolean             { return !!this.currentUser?.restrictedAccess; }
+
   /** Permission keys for the current session (admin = full catalogue; custom = assigned only). */
   get permissions(): string[] {
     return this.currentUser?.permissions ?? [];
@@ -151,6 +154,11 @@ export class AuthService {
   }
 
   redirectByRole(returnUrl?: string | null): void {
+    // Restricted (Disabled) sessions may only use document upload / profile.
+    if (this.isRestricted) {
+      this.router.navigate(['/account/documents'], { queryParams: { restricted: '1' } });
+      return;
+    }
     // Prefer a safe returnUrl (e.g. browse after login) over the default role home.
     if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('/auth')) {
       this.router.navigateByUrl(returnUrl);

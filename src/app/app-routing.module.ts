@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { RoleGuard } from './core/guards/role.guard';
 import { BrowseAccessGuard } from './core/guards/browse-access.guard';
+import { RestrictedSessionGuard } from './core/guards/restricted-session.guard';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 import { PublicLayoutComponent } from './layout/public-layout/public-layout.component';
 import { UnauthorizedComponent } from './shared/components/unauthorized/unauthorized.component';
@@ -55,7 +56,8 @@ const routes: Routes = [
   {
     path: '',
     component: MainLayoutComponent,
-    canActivate: [AuthGuard],
+    canActivate: [AuthGuard, RestrictedSessionGuard],
+    canActivateChild: [RestrictedSessionGuard],
     children: [
       {
         path: 'admin',

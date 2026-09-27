@@ -48,4 +48,20 @@ export class UserService {
       catchError(() => of([]))
     );
   }
+
+  getBookingSummary(userId: number): Observable<{
+    userId: number;
+    activeBookings: number;
+    totalBookings: number;
+    canDisable: boolean;
+  }> {
+    return this.http.get<{
+      userId: number;
+      activeBookings: number;
+      totalBookings: number;
+      canDisable: boolean;
+    }>(`${this.apiUrl}/${userId}/booking-summary`).pipe(
+      catchError(() => of({ userId, activeBookings: 0, totalBookings: 0, canDisable: true }))
+    );
+  }
 }
