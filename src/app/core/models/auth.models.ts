@@ -11,9 +11,6 @@ export interface LoginResponse {
   fullName: string;
   expiry: string;
   permissions?: string[];
-  /** True when a Disabled Supplier/Contractor gets a short-lived session for document upload only. */
-  restrictedAccess?: boolean;
-  accountStatus?: string;
 }
 
 export interface OtpChallengeResponse {
