@@ -124,3 +124,31 @@
     .btn { width: 100%; }
   }
 }
+.fulfillment-row {
+  display: flex;
+  gap: 1rem;
+  margin: 0.35rem 0;
+  flex-wrap: wrap;
+}
+.fulfillment-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.line-address {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.35rem;
+}
+.line-address__input {
+  flex: 1 1 220px;
+  min-height: 40px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}

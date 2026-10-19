@@ -64,14 +64,47 @@
               –
               {{ item.rentalEndDate | date:'dd MMM yyyy':'Africa/Johannesburg' }}
               · {{ item.rentalDurationDays }} day{{ item.rentalDurationDays === 1 ? '' : 's' }}
-              · {{ item.fulfillmentMethod === 'Contractor Pickup' ? 'Contractor pickup' : 'Supplier delivery' }}
+            </div>
+            <div class="fulfillment-row">
+              <label class="fulfillment-option">
+                <input type="radio" name="fulfill-{{ item.cartItemID }}"
+                       [checked]="item.fulfillmentMethod === 'Contractor Pickup'"
+                       (change)="setFulfillment(item, 'Contractor Pickup')"
+                       [disabled]="savingItemId === item.cartItemID" />
+                Pickup
+              </label>
+              <label class="fulfillment-option">
+                <input type="radio" name="fulfill-{{ item.cartItemID }}"
+                       [checked]="item.fulfillmentMethod !== 'Contractor Pickup'"
+                       (change)="setFulfillment(item, 'Supplier Delivery')"
+                       [disabled]="savingItemId === item.cartItemID" />
+                Delivery
+              </label>
             </div>
             <div class="cart-line__meta text-muted" *ngIf="item.fulfillmentMethod === 'Contractor Pickup'">
               Collect from {{ item.deliveryAddress }} · no delivery fee
             </div>
-            <div class="cart-line__meta text-muted" *ngIf="item.fulfillmentMethod !== 'Contractor Pickup'">
-              Deliver to {{ item.deliveryAddress || 'address to be confirmed' }}
-              <span *ngIf="item.deliveryFee > 0"> · delivery R {{ item.deliveryFee | number:'1.2-2' }}</span>
+            <div class="line-address" *ngIf="item.fulfillmentMethod !== 'Contractor Pickup'">
+              <label class="sr-only" [attr.for]="'addr-' + item.cartItemID">Delivery address</label>
+              <input class="line-address__input" type="text"
+                     [id]="'addr-' + item.cartItemID"
+                     [ngModel]="draftAddress[item.cartItemID] ?? item.deliveryAddress"
+                     (ngModelChange)="draftAddress[item.cartItemID] = $event"
+                     placeholder="Street, suburb, city, province, postal code"
+                     [disabled]="savingItemId === item.cartItemID" />
+              <button type="button" class="btn btn--sm btn--outline"
+                      [disabled]="savingItemId === item.cartItemID"
+                      (click)="saveLineAddress(item)">Save address</button>
+              <button type="button" class="btn btn--sm btn--ghost"
+                      [disabled]="savingItemId === item.cartItemID"
+                      (click)="applyAddressToSupplierGroup(item, group)"
+                      title="Use this address for all delivery items from this supplier">
+                Apply to supplier
+              </button>
+              <span class="text-muted" *ngIf="item.deliveryFee > 0">
+                · delivery R {{ item.deliveryFee | number:'1.2-2' }}
+                <span *ngIf="item.deliveryDistanceKm > 0">({{ item.deliveryDistanceKm | number:'1.0-1' }} km)</span>
+              </span>
             </div>
             <div class="field-error" *ngIf="!item.isAvailable">No longer available at this quantity — update or remove.</div>
           </div>

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CartService } from '../../../core/services/cart.service';
 import { ListingService } from '../../../core/services/listing.service';
-import { CartDto, CartItemDto, CheckoutResultBookingDto } from '../../../core/models/cart.models';
+import { CartDto, CartItemDto, CartSupplierGroupDto, CheckoutResultBookingDto } from '../../../core/models/cart.models';
 
 @Component({
   selector: 'app-cart',
@@ -23,6 +23,9 @@ export class CartComponent implements OnInit {
   promoOk = false;
 
   savingItemId: number | null = null;
+
+  /** Per-line address drafts while the user is typing (keyed by cartItemID). */
+  draftAddress: Record<number, string> = {};
 
   readonly provinces = [
     'Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal', 'Limpopo',
@@ -213,15 +216,84 @@ export class CartComponent implements OnInit {
   }
 
   setFulfillment(item: CartItemDto, method: string) {
+    this.savingItemId = item.cartItemID;
+    const address = method === 'Contractor Pickup'
+      ? (item.deliveryAddress || '')
+      : (this.draftAddress[item.cartItemID] || item.deliveryAddress || '').trim();
     this.cartService.updateItem(item.cartItemID, {
       startDate: item.rentalStartDate,
       endDate: item.rentalEndDate,
       quantity: item.quantity,
       fulfillmentMethod: method,
-      deliveryAddress: method === 'Contractor Pickup' ? item.deliveryAddress : this.composedAddress() || item.deliveryAddress
+      deliveryAddress: address
     }).subscribe({
-      next: () => this.load(!!this.promoCode.trim()),
-      error: err => this.error = err?.error?.message || 'Could not update fulfilment.'
+      next: () => {
+        this.savingItemId = null;
+        this.load(!!this.promoCode.trim());
+      },
+      error: err => {
+        this.savingItemId = null;
+        this.error = err?.error?.message || 'Could not update fulfilment.';
+      }
+    });
+  }
+
+  saveLineAddress(item: CartItemDto) {
+    const address = (this.draftAddress[item.cartItemID] ?? item.deliveryAddress ?? '').trim();
+    if (!address) {
+      this.error = 'Enter a delivery address for this item.';
+      return;
+    }
+    this.savingItemId = item.cartItemID;
+    this.error = '';
+    this.cartService.updateItem(item.cartItemID, {
+      startDate: item.rentalStartDate,
+      endDate: item.rentalEndDate,
+      quantity: item.quantity,
+      fulfillmentMethod: item.fulfillmentMethod || 'Supplier Delivery',
+      deliveryAddress: address
+    }).subscribe({
+      next: () => {
+        this.savingItemId = null;
+        delete this.draftAddress[item.cartItemID];
+        this.load(!!this.promoCode.trim());
+      },
+      error: err => {
+        this.savingItemId = null;
+        this.error = err?.error?.message || 'Could not save delivery address.';
+      }
+    });
+  }
+
+  /** Copy this line's address onto every non-pickup item from the same supplier. */
+  applyAddressToSupplierGroup(item: CartItemDto, group: CartSupplierGroupDto) {
+    const address = (this.draftAddress[item.cartItemID] ?? item.deliveryAddress ?? '').trim();
+    if (!address) {
+      this.error = 'Enter an address before applying it to the supplier group.';
+      return;
+    }
+    this.error = '';
+    const targets = group.items.filter(i => (i.fulfillmentMethod || '') !== 'Contractor Pickup');
+    let pending = targets.length;
+    if (pending === 0) return;
+    targets.forEach(target => {
+      this.cartService.updateItem(target.cartItemID, {
+        startDate: target.rentalStartDate,
+        endDate: target.rentalEndDate,
+        quantity: target.quantity,
+        fulfillmentMethod: target.fulfillmentMethod || 'Supplier Delivery',
+        deliveryAddress: address
+      }).subscribe({
+        next: () => {
+          pending--;
+          if (pending === 0) this.load(!!this.promoCode.trim());
+        },
+        error: err => {
+          pending--;
+          this.error = err?.error?.message || 'Could not apply address to all items.';
+          if (pending === 0) this.load(!!this.promoCode.trim());
+        }
+      });
     });
   }
 
