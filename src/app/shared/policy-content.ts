@@ -15,7 +15,7 @@ export interface PolicyDocument {
 // It has NOT been reviewed by a lawyer and must not go live as-is — get it checked against
 // South African consumer-protection and e-commerce law (CPA, ECTA) before launch, and have
 // Admin confirm the actual commission rate, cancellation window, and dispute process match
-// what's implemented (48-hour fee window, RFQ + Fixed pricing, etc.).
+// what's implemented (dual-sign binding, payment window, non-payment fee, RFQ + Fixed pricing, etc.).
 
 export const TERMS_OF_SERVICE: PolicyDocument = {
   key: 'terms',
@@ -59,12 +59,13 @@ export const TERMS_OF_SERVICE: PolicyDocument = {
     {
       heading: '4. Bookings, Payment, and Cancellation',
       body: [
-        'A booking becomes binding once a lease agreement is signed and, where required, payment is ' +
-        'made. Cancellation is permitted before the machinery has been handed over; cancellations made ' +
-        'within 48 hours of the scheduled rental start may incur a cancellation fee, as noted on the ' +
-        'lease agreement.',
-        'Once machinery has been delivered or collected, a booking can no longer be cancelled — issues ' +
-        'from that point are handled through a Return Request or a Dispute.'
+        'A booking becomes binding once both parties have signed the lease agreement. Online ' +
+        'cancellation is only available before both signatures are complete. After both parties sign, ' +
+        'the hire is binding online — contact support or raise a dispute to end a hire early.',
+        'Payment is due within the platform-configured payment window after dual signature. Failure ' +
+        'to pay in time cancels the booking, releases the equipment, and attracts a non-payment fee ' +
+        '(percentage, minimum and maximum as set by Admin under Platform fees).',
+        'Once machinery has been delivered or collected, issues are handled through a Return Request or a Dispute.'
       ]
     },
     {
@@ -212,9 +213,11 @@ export const MASTER_LEASE_AGREEMENT: PolicyDocument = {
     {
       heading: '6. Cancellation Policy',
       body: [
-        'Bookings may be cancelled by either party before delivery or collection has taken place. ' +
-        'Cancellations made within 48 hours of the scheduled rental start date may incur a ' +
-        'cancellation fee, to be assessed by Admin.',
+        'Online cancellation is only permitted before both parties have signed the lease. After dual ' +
+        'signature the hire is binding online; early termination requires support or a dispute.',
+        'If payment is not received within the configured payment window after dual signature, the ' +
+        'booking is cancelled automatically, stock is released, and a non-payment fee applies as ' +
+        'configured by the platform.',
         'Once machinery has been delivered or collected, the booking can no longer be cancelled under ' +
         'this clause — see Dispute Resolution below.'
       ]

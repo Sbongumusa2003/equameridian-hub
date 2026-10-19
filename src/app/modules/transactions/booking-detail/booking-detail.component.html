@@ -28,6 +28,12 @@
       <div class="action-btns mt-16" *ngIf="canCancelBooking && !showCancelForm">
         <button class="btn btn--sm btn--danger-outline" (click)="showCancelForm = true">Cancel Booking</button>
       </div>
+      <div class="alert alert--warning mt-16" *ngIf="cancelBlockedAfterLeaseSigned">
+        This booking cannot be cancelled online — the lease has been signed by both parties and the hire is binding.
+        If you need to end the hire early,
+        <button type="button" class="link" (click)="showDisputeForm = true">raise a dispute</button>
+        or contact support.
+      </div>
       <div class="alert alert--warning mt-16" *ngIf="cancelBlockedByDelivery">
         This booking can no longer be cancelled — machinery prep, delivery, or handover has already started.
         If there is a problem,
@@ -39,8 +45,8 @@
     <div class="panel" *ngIf="canCancelBooking && showCancelForm">
       <h4>Cancel This Booking</h4>
       <p class="text-muted">
-        Cancellations made less than 48 hours before the rental start date may be subject to a
-        cancellation fee per the lease agreement's cancellation policy.
+        You can cancel free of charge while the lease is still waiting for both signatures.
+        Once both parties have signed, online cancellation is no longer available.
       </p>
       <div class="alert alert--error" *ngIf="cancelError">{{ cancelError }}</div>
       <div class="form-group">

@@ -267,12 +267,23 @@ export class BookingDetailComponent implements OnInit {
     return this.isSupplier && !!this.detail
       && (this.detail.bookingStatus === 'Return Requested' || this.detail.bookingStatus === 'Ready For Return Pickup');
   }
+  /** Online cancel only before both parties have signed the lease. */
   get canCancelBooking() {
     return !!this.detail
       && (this.isContractor || this.isSupplier)
       && !this.detail.hasDelivery
       && this.detail.deliveryStatus !== 'Delivered'
-      && ['AwaitingSignature', 'AwaitingPayment', 'Confirmed'].includes(this.detail.bookingStatus);
+      && this.detail.bookingStatus === 'AwaitingSignature';
+  }
+
+  /** Lease fully executed — cancel blocked; contact support or dispute. */
+  get cancelBlockedAfterLeaseSigned() {
+    return !!this.detail
+      && (this.isContractor || this.isSupplier)
+      && this.detail.bookingStatus !== 'Cancelled'
+      && this.detail.bookingStatus !== 'Completed'
+      && !this.canCancelBooking
+      && ['AwaitingPayment', 'Confirmed'].includes(this.detail.bookingStatus);
   }
 
   get cancelBlockedByDelivery() {
@@ -281,6 +292,7 @@ export class BookingDetailComponent implements OnInit {
       && this.detail.bookingStatus !== 'Cancelled'
       && this.detail.bookingStatus !== 'Completed'
       && !this.canCancelBooking
+      && !this.cancelBlockedAfterLeaseSigned
       && (this.detail.hasDelivery || this.detail.deliveryStatus === 'Delivered');
   }
 

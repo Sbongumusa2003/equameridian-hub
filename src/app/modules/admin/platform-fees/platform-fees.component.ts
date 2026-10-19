@@ -20,7 +20,7 @@ export class PlatformFeesComponent implements OnInit {
   error = '';
   successMessage = '';
 
-  form = { commissionRate: 0, minFee: 0, maxFee: 0, vatInclusive: false, vatRate: 15, deliveryBaseFee: 350, deliveryFreeRadiusKm: 50, deliveryRatePerKm: 15 };
+  form = { commissionRate: 0, minFee: 0, maxFee: 0, vatInclusive: false, vatRate: 15, deliveryBaseFee: 350, deliveryFreeRadiusKm: 50, deliveryRatePerKm: 15, paymentWindowHours: 48, nonPaymentFeePercent: 25, nonPaymentFeeMinZAR: 500, nonPaymentFeeMaxZAR: 5000 };
 
   // Duration discount tiers (hire-length discounts)
   tiers: DiscountTierDto[] = [];
@@ -130,7 +130,11 @@ export class PlatformFeesComponent implements OnInit {
         vatRate: c.vatRate,
         deliveryBaseFee: c.deliveryBaseFee ?? 350,
         deliveryFreeRadiusKm: c.deliveryFreeRadiusKm ?? 50,
-        deliveryRatePerKm: c.deliveryRatePerKm ?? 15
+        deliveryRatePerKm: c.deliveryRatePerKm,
+        paymentWindowHours: c.paymentWindowHours ?? 48,
+        nonPaymentFeePercent: c.nonPaymentFeePercent ?? 25,
+        nonPaymentFeeMinZAR: c.nonPaymentFeeMinZAR ?? 500,
+        nonPaymentFeeMaxZAR: c.nonPaymentFeeMaxZAR ?? 5000
       };
         this.loading = false;
       },
@@ -146,6 +150,14 @@ export class PlatformFeesComponent implements OnInit {
     this.successMessage = '';
     if (this.form.maxFee < this.form.minFee) {
       this.error = 'Maximum fee must be greater than or equal to minimum fee.';
+      return;
+    }
+    if (this.form.nonPaymentFeeMaxZAR < this.form.nonPaymentFeeMinZAR) {
+      this.error = 'Non-payment maximum fee must be greater than or equal to the minimum.';
+      return;
+    }
+    if (!this.form.paymentWindowHours || this.form.paymentWindowHours < 1) {
+      this.error = 'Payment window must be at least 1 hour.';
       return;
     }
     this.saving = true;

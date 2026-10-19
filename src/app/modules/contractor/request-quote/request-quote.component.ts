@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/operators';
 import { ListingService } from '../../../core/services/listing.service';
 import { QuotationService } from '../../../core/services/quotation.service';
+import { LocationService, PlaceSuggestion } from '../../../core/services/location.service';
 import { ListingDto } from '../../../core/models/listing.models';
 
 function dateRangeValidator(group: AbstractControl): ValidationErrors | null {
@@ -29,7 +32,7 @@ function minStartDateValidator(control: AbstractControl): ValidationErrors | nul
   styleUrls: ['./request-quote.component.scss'],
   standalone: false,
 })
-export class RequestQuoteComponent implements OnInit {
+export class RequestQuoteComponent implements OnInit, OnDestroy {
   listing: ListingDto | null = null;
   loading = true;
   submitting = false;
@@ -65,6 +68,26 @@ export class RequestQuoteComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.placeQuery$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(q => {
+        const query = (q || '').trim();
+        if (query.length < 2) {
+          this.placeSuggestions = [];
+          this.placeSearching = false;
+          return of([] as PlaceSuggestion[]);
+        }
+        this.placeSearching = true;
+        return this.locationService.search(query);
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(results => {
+      this.placeSuggestions = results;
+      this.placeSearching = false;
+      this.showPlaceDropdown = results.length > 0;
+    });
+
     const listingId = Number(this.route.snapshot.paramMap.get('listingId'));
     this.listingService.contractorGetById(listingId).subscribe({
       next: l => {
@@ -87,14 +110,49 @@ export class RequestQuoteComponent implements OnInit {
     });
   }
 
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onPlaceSearchInput(value: string) {
+    this.form.patchValue({ placeSearch: value }, { emitEvent: false });
+    this.placeQuery$.next(value);
+  }
+
+  selectPlace(place: PlaceSuggestion) {
+    this.form.patchValue({
+      placeSearch: place.label,
+      suburb: place.suburb || '',
+      city: place.city || '',
+      province: place.province || '',
+      postalCode: place.postalCode || ''
+    });
+    this.placeSuggestions = [];
+    this.showPlaceDropdown = false;
+    this.composeDeliveryAddress();
+  }
+
+  composeDeliveryAddress() {
+    const v = this.form.value;
+    const parts = [v.street, v.suburb, v.city, v.province, v.postalCode, 'South Africa']
+      .map((s: string) => (s || '').trim())
+      .filter(Boolean);
+    this.form.patchValue({ deliveryAddress: parts.join(', ') }, { emitEvent: false });
+  }
+
   private onFulfillmentMethodChange() {
-    const addressCtrl = this.form.get('deliveryAddress');
+    const street = this.form.get('street');
+    const city = this.form.get('city');
     if (this.form.get('fulfillmentMethod')?.value === 'Supplier Delivery') {
-      addressCtrl?.setValidators([Validators.required, Validators.minLength(5), Validators.maxLength(300)]);
+      street?.setValidators([Validators.required, Validators.minLength(3), Validators.maxLength(120)]);
+      city?.setValidators([Validators.required, Validators.minLength(2)]);
     } else {
-      addressCtrl?.setValidators([Validators.maxLength(300)]);
+      street?.clearValidators();
+      city?.clearValidators();
     }
-    addressCtrl?.updateValueAndValidity();
+    street?.updateValueAndValidity();
+    city?.updateValueAndValidity();
   }
 
   get startDateError(): string {
@@ -121,16 +179,29 @@ export class RequestQuoteComponent implements OnInit {
     return '';
   }
 
+  get streetError(): string {
+    const ctrl = this.form.get('street');
+    if (!ctrl?.touched || this.form.get('fulfillmentMethod')?.value !== 'Supplier Delivery') return '';
+    if (ctrl.errors?.['required']) return 'Street / building is required.';
+    if (ctrl.errors?.['minlength']) return 'Enter a fuller street address.';
+    return '';
+  }
+
+  get cityError(): string {
+    const ctrl = this.form.get('city');
+    if (!ctrl?.touched || this.form.get('fulfillmentMethod')?.value !== 'Supplier Delivery') return '';
+    if (ctrl.errors?.['required']) return 'Select a place from the search results (city is required).';
+    return '';
+  }
+
   get deliveryAddressError(): string {
-    const ctrl = this.form.get('deliveryAddress');
-    if (!ctrl?.touched) return '';
-    if (ctrl.errors?.['required']) return 'Delivery address is required.';
-    if (ctrl.errors?.['minlength']) return 'Please enter a more complete address.';
-    if (ctrl.errors?.['maxlength']) return 'Delivery address is too long.';
+    if (this.streetError) return this.streetError;
+    if (this.cityError) return this.cityError;
     return '';
   }
 
   submit() {
+    this.composeDeliveryAddress();
     this.form.markAllAsTouched();
     if (this.form.invalid || !this.listing) {
       return;
@@ -140,6 +211,11 @@ export class RequestQuoteComponent implements OnInit {
     this.needsDocumentApproval = false;
 
     const v = this.form.value;
+    if (v.fulfillmentMethod === 'Supplier Delivery' && (!v.street?.trim() || !v.city?.trim())) {
+      this.submitting = false;
+      this.errorMessage = 'Enter your street and search/select a place (suburb or city) in South Africa.';
+      return;
+    }
     this.quotationService.contractorCreate({
       listingID: this.listing.listingID,
       startDate: v.startDate,

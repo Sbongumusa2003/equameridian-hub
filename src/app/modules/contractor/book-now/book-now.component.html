@@ -65,10 +65,54 @@
       </div>
 
       <div class="form-group" *ngIf="!isPickup">
-        <label>Delivery Address <span class="required">*</span></label>
-        <textarea formControlName="deliveryAddress" placeholder="Street, suburb, city, province, postal code"
-                  [class.is-invalid]="deliveryAddressError"></textarea>
-        <div class="field-error" *ngIf="deliveryAddressError">{{ deliveryAddressError }}</div>
+        <label>Street / building <span class="required">*</span></label>
+        <input type="text" formControlName="street"
+               placeholder="e.g. 12 Main Road, Unit 4"
+               (blur)="composeDeliveryAddress()"
+               [class.is-invalid]="streetError" />
+        <div class="field-error" *ngIf="streetError">{{ streetError }}</div>
+      </div>
+
+      <div class="form-group place-search" *ngIf="!isPickup">
+        <label>Search place (suburb / city) <span class="required">*</span></label>
+        <input type="text"
+               formControlName="placeSearch"
+               placeholder="Start typing a suburb or city in South Africa…"
+               autocomplete="off"
+               (input)="onPlaceSearchInput($any($event.target).value)"
+               (focus)="showPlaceDropdown = placeSuggestions.length > 0"
+               (blur)="composeDeliveryAddress()"
+               [class.is-invalid]="cityError" />
+        <small class="text-muted">
+          Powered by OpenRouteService — select a result to fill province and postal code.
+        </small>
+        <div class="place-dropdown" *ngIf="showPlaceDropdown && placeSuggestions.length">
+          <button type="button" class="place-option" *ngFor="let p of placeSuggestions"
+                  (mousedown)="selectPlace(p)">
+            {{ p.label }}
+          </button>
+        </div>
+        <div class="text-muted" *ngIf="placeSearching">Searching places…</div>
+        <div class="field-error" *ngIf="cityError">{{ cityError }}</div>
+      </div>
+
+      <div class="form-row" *ngIf="!isPickup && (form.value.city || form.value.province || form.value.postalCode)">
+        <div class="form-group">
+          <label>Suburb</label>
+          <input type="text" formControlName="suburb" readonly class="readonly-field" />
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" formControlName="city" readonly class="readonly-field" />
+        </div>
+        <div class="form-group">
+          <label>Province</label>
+          <input type="text" formControlName="province" readonly class="readonly-field" />
+        </div>
+        <div class="form-group">
+          <label>Postal code</label>
+          <input type="text" formControlName="postalCode" readonly class="readonly-field" />
+        </div>
       </div>
 
       <div class="form-group" *ngIf="isPickup">

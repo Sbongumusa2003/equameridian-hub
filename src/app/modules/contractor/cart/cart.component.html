@@ -85,26 +85,54 @@
               Collect from {{ item.deliveryAddress }} · no delivery fee
             </div>
             <div class="line-address" *ngIf="item.fulfillmentMethod !== 'Contractor Pickup'">
-              <label class="sr-only" [attr.for]="'addr-' + item.cartItemID">Delivery address</label>
-              <input class="line-address__input" type="text"
-                     [id]="'addr-' + item.cartItemID"
-                     [ngModel]="draftAddress[item.cartItemID] ?? item.deliveryAddress"
-                     (ngModelChange)="draftAddress[item.cartItemID] = $event"
-                     placeholder="Street, suburb, city, province, postal code"
-                     [disabled]="savingItemId === item.cartItemID" />
-              <button type="button" class="btn btn--sm btn--outline"
-                      [disabled]="savingItemId === item.cartItemID"
-                      (click)="saveLineAddress(item)">Save address</button>
-              <button type="button" class="btn btn--sm btn--ghost"
-                      [disabled]="savingItemId === item.cartItemID"
-                      (click)="applyAddressToSupplierGroup(item, group)"
-                      title="Use this address for all delivery items from this supplier">
-                Apply to supplier
-              </button>
-              <span class="text-muted" *ngIf="item.deliveryFee > 0">
-                · delivery R {{ item.deliveryFee | number:'1.2-2' }}
-                <span *ngIf="item.deliveryDistanceKm > 0">({{ item.deliveryDistanceKm | number:'1.0-1' }} km)</span>
-              </span>
+              <div class="line-address__fields">
+                <input class="line-address__input" type="text"
+                       [id]="'street-' + item.cartItemID"
+                       [ngModel]="ensureLineDraft(item).street"
+                       (ngModelChange)="onLineStreetChange(item, $event)"
+                       placeholder="Street / building (e.g. 12 Main Road)"
+                       [disabled]="savingItemId === item.cartItemID" />
+                <div class="place-search line-place-search">
+                  <input class="line-address__input" type="text"
+                         [id]="'place-' + item.cartItemID"
+                         [ngModel]="ensureLineDraft(item).placeSearch"
+                         (ngModelChange)="onLinePlaceSearch(item, $event)"
+                         (focus)="showPlaceDropdown[item.cartItemID] = (placeSuggestions[item.cartItemID]?.length || 0) > 0"
+                         placeholder="Search suburb or city in South Africa…"
+                         autocomplete="off"
+                         [disabled]="savingItemId === item.cartItemID" />
+                  <div class="place-dropdown" *ngIf="showPlaceDropdown[item.cartItemID] && placeSuggestions[item.cartItemID]?.length">
+                    <button type="button" class="place-option"
+                            *ngFor="let p of placeSuggestions[item.cartItemID]"
+                            (mousedown)="selectLinePlace(item, p)">
+                      {{ p.label }}
+                    </button>
+                  </div>
+                  <span class="text-muted place-searching" *ngIf="placeSearching[item.cartItemID]">Searching…</span>
+                </div>
+                <div class="line-place-meta text-muted"
+                     *ngIf="ensureLineDraft(item).city || ensureLineDraft(item).province || ensureLineDraft(item).postalCode">
+                  <span *ngIf="ensureLineDraft(item).suburb">{{ ensureLineDraft(item).suburb }}, </span>
+                  <span *ngIf="ensureLineDraft(item).city">{{ ensureLineDraft(item).city }}</span>
+                  <span *ngIf="ensureLineDraft(item).province"> · {{ ensureLineDraft(item).province }}</span>
+                  <span *ngIf="ensureLineDraft(item).postalCode"> · {{ ensureLineDraft(item).postalCode }}</span>
+                </div>
+              </div>
+              <div class="line-address__actions">
+                <button type="button" class="btn btn--sm btn--outline"
+                        [disabled]="savingItemId === item.cartItemID"
+                        (click)="saveLineAddress(item)">Save address</button>
+                <button type="button" class="btn btn--sm btn--ghost"
+                        [disabled]="savingItemId === item.cartItemID"
+                        (click)="applyAddressToSupplierGroup(item, group)"
+                        title="Use this address for all delivery items from this supplier">
+                  Apply to supplier
+                </button>
+                <span class="text-muted" *ngIf="item.deliveryFee > 0">
+                  · delivery R {{ item.deliveryFee | number:'1.2-2' }}
+                  <span *ngIf="item.deliveryDistanceKm > 0">({{ item.deliveryDistanceKm | number:'1.0-1' }} km)</span>
+                </span>
+              </div>
             </div>
             <div class="field-error" *ngIf="!item.isAvailable">No longer available at this quantity — update or remove.</div>
           </div>

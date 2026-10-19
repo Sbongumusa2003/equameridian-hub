@@ -8,6 +8,10 @@ export interface FeeConfigurationDto {
   deliveryBaseFee: number;
   deliveryFreeRadiusKm: number;
   deliveryRatePerKm: number;
+  paymentWindowHours: number;
+  nonPaymentFeePercent: number;
+  nonPaymentFeeMinZAR: number;
+  nonPaymentFeeMaxZAR: number;
   updatedByAdminName?: string;
   updatedAt: string;
 }
@@ -21,6 +25,10 @@ export interface UpdateFeeConfigurationDto {
   deliveryBaseFee: number;
   deliveryFreeRadiusKm: number;
   deliveryRatePerKm: number;
+  paymentWindowHours: number;
+  nonPaymentFeePercent: number;
+  nonPaymentFeeMinZAR: number;
+  nonPaymentFeeMaxZAR: number;
 }
 
 export interface DiscountTierDto {

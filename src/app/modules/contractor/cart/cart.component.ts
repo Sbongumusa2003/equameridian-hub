@@ -1,8 +1,21 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subject, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/operators';
 import { CartService } from '../../../core/services/cart.service';
 import { ListingService } from '../../../core/services/listing.service';
+import { LocationService, PlaceSuggestion } from '../../../core/services/location.service';
 import { CartDto, CartItemDto, CartSupplierGroupDto, CheckoutResultBookingDto } from '../../../core/models/cart.models';
+
+/** Per-line delivery address draft (street typed, place from OpenRoute). */
+interface LineAddressDraft {
+  street: string;
+  placeSearch: string;
+  suburb: string;
+  city: string;
+  province: string;
+  postalCode: string;
+}
 
 @Component({
   selector: 'app-cart',
@@ -10,7 +23,7 @@ import { CartDto, CartItemDto, CartSupplierGroupDto, CheckoutResultBookingDto } 
   styleUrls: ['./cart.component.scss'],
   standalone: false,
 })
-export class CartComponent implements OnInit {
+export class CartComponent implements OnInit, OnDestroy {
   cart: CartDto | null = null;
   loading = true;
   error = '';
@@ -24,8 +37,17 @@ export class CartComponent implements OnInit {
 
   savingItemId: number | null = null;
 
-  /** Per-line address drafts while the user is typing (keyed by cartItemID). */
+  /** Full composed address drafts (still used when saving). */
   draftAddress: Record<number, string> = {};
+  /** Structured street + place drafts per cart line. */
+  lineDrafts: Record<number, LineAddressDraft> = {};
+  placeSuggestions: Record<number, PlaceSuggestion[]> = {};
+  placeSearching: Record<number, boolean> = {};
+  showPlaceDropdown: Record<number, boolean> = {};
+
+  private destroy$ = new Subject<void>();
+  /** Emits { cartItemId, query } for debounced place search. */
+  private placeQuery$ = new Subject<{ id: number; q: string }>();
 
   readonly provinces = [
     'Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal', 'Limpopo',
@@ -42,6 +64,7 @@ export class CartComponent implements OnInit {
   constructor(
     private cartService: CartService,
     private listingService: ListingService,
+    private locationService: LocationService,
     private router: Router
   ) {}
 
@@ -53,7 +76,35 @@ export class CartComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.placeQuery$.pipe(
+      debounceTime(300),
+      distinctUntilChanged((a, b) => a.id === b.id && a.q === b.q),
+      switchMap(({ id, q }) => {
+        const query = (q || '').trim();
+        if (query.length < 2) {
+          this.placeSuggestions[id] = [];
+          this.placeSearching[id] = false;
+          this.showPlaceDropdown[id] = false;
+          return of({ id, results: [] as PlaceSuggestion[] });
+        }
+        this.placeSearching[id] = true;
+        return this.locationService.search(query).pipe(
+          switchMap(results => of({ id, results }))
+        );
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(({ id, results }) => {
+      this.placeSuggestions[id] = results;
+      this.placeSearching[id] = false;
+      this.showPlaceDropdown[id] = results.length > 0;
+    });
+
     this.load();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   load(withPromo = false) {
@@ -63,6 +114,7 @@ export class CartComponent implements OnInit {
       next: cart => {
         this.cart = cart;
         this.loading = false;
+        this.seedLineDraftsFromCart();
         this.hydrateShippingFromCart();
         if (code) {
           this.promoOk = !!cart.promoValid;
@@ -71,6 +123,87 @@ export class CartComponent implements OnInit {
       },
       error: () => { this.loading = false; this.error = 'Could not load your cart.'; }
     });
+  }
+
+  /** Initialise structured drafts from existing delivery addresses. */
+  private seedLineDraftsFromCart() {
+    if (!this.cart) return;
+    for (const group of this.cart.supplierGroups) {
+      for (const item of group.items) {
+        if (this.lineDrafts[item.cartItemID]) continue;
+        const raw = (item.deliveryAddress || '').trim();
+        if (!raw || item.fulfillmentMethod === 'Contractor Pickup') continue;
+        const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
+        // Heuristic: first part = street, last may be country, then postal, province, city…
+        const withoutCountry = parts.filter(p => !/^south africa$/i.test(p));
+        if (withoutCountry.length >= 4) {
+          this.lineDrafts[item.cartItemID] = {
+            street: withoutCountry[0],
+            placeSearch: withoutCountry.slice(1, -2).join(', ') || withoutCountry[1] || '',
+            suburb: withoutCountry.length >= 5 ? withoutCountry[1] : '',
+            city: withoutCountry.length >= 5 ? withoutCountry[2] : withoutCountry[1],
+            province: withoutCountry[withoutCountry.length - 2] || '',
+            postalCode: withoutCountry[withoutCountry.length - 1] || ''
+          };
+        } else {
+          this.lineDrafts[item.cartItemID] = {
+            street: withoutCountry[0] || raw,
+            placeSearch: '',
+            suburb: '',
+            city: '',
+            province: '',
+            postalCode: ''
+          };
+        }
+        this.draftAddress[item.cartItemID] = raw;
+      }
+    }
+  }
+
+  ensureLineDraft(item: CartItemDto): LineAddressDraft {
+    if (!this.lineDrafts[item.cartItemID]) {
+      this.lineDrafts[item.cartItemID] = {
+        street: '',
+        placeSearch: '',
+        suburb: '',
+        city: '',
+        province: '',
+        postalCode: ''
+      };
+    }
+    return this.lineDrafts[item.cartItemID];
+  }
+
+  onLineStreetChange(item: CartItemDto, value: string) {
+    const d = this.ensureLineDraft(item);
+    d.street = value;
+    this.composeLineAddress(item);
+  }
+
+  onLinePlaceSearch(item: CartItemDto, value: string) {
+    const d = this.ensureLineDraft(item);
+    d.placeSearch = value;
+    this.placeQuery$.next({ id: item.cartItemID, q: value });
+  }
+
+  selectLinePlace(item: CartItemDto, place: PlaceSuggestion) {
+    const d = this.ensureLineDraft(item);
+    d.placeSearch = place.label;
+    d.suburb = place.suburb || '';
+    d.city = place.city || '';
+    d.province = place.province || '';
+    d.postalCode = place.postalCode || '';
+    this.placeSuggestions[item.cartItemID] = [];
+    this.showPlaceDropdown[item.cartItemID] = false;
+    this.composeLineAddress(item);
+  }
+
+  composeLineAddress(item: CartItemDto) {
+    const d = this.ensureLineDraft(item);
+    const parts = [d.street, d.suburb, d.city, d.province, d.postalCode, 'South Africa']
+      .map(s => (s || '').trim())
+      .filter(Boolean);
+    this.draftAddress[item.cartItemID] = parts.join(', ');
   }
 
   applyPromo() {
@@ -239,11 +372,13 @@ export class CartComponent implements OnInit {
   }
 
   saveLineAddress(item: CartItemDto) {
-    const address = (this.draftAddress[item.cartItemID] ?? item.deliveryAddress ?? '').trim();
-    if (!address) {
-      this.error = 'Enter a delivery address for this item.';
+    this.composeLineAddress(item);
+    const d = this.ensureLineDraft(item);
+    if (!d.street.trim() || !d.city.trim()) {
+      this.error = 'Enter the street and search/select a place (city) for this item.';
       return;
     }
+    const address = (this.draftAddress[item.cartItemID] || '').trim();
     this.savingItemId = item.cartItemID;
     this.error = '';
     this.cartService.updateItem(item.cartItemID, {
@@ -255,7 +390,7 @@ export class CartComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.savingItemId = null;
-        delete this.draftAddress[item.cartItemID];
+        // Keep draft so the fields stay filled after reload seed.
         this.load(!!this.promoCode.trim());
       },
       error: err => {
@@ -267,9 +402,11 @@ export class CartComponent implements OnInit {
 
   /** Copy this line's address onto every non-pickup item from the same supplier. */
   applyAddressToSupplierGroup(item: CartItemDto, group: CartSupplierGroupDto) {
+    this.composeLineAddress(item);
     const address = (this.draftAddress[item.cartItemID] ?? item.deliveryAddress ?? '').trim();
-    if (!address) {
-      this.error = 'Enter an address before applying it to the supplier group.';
+    const d = this.ensureLineDraft(item);
+    if (!d.street.trim() || !d.city.trim()) {
+      this.error = 'Enter street and select a place before applying to the supplier group.';
       return;
     }
     this.error = '';
@@ -277,6 +414,9 @@ export class CartComponent implements OnInit {
     let pending = targets.length;
     if (pending === 0) return;
     targets.forEach(target => {
+      // Copy structured draft so other lines show the same place fields.
+      this.lineDrafts[target.cartItemID] = { ...d };
+      this.draftAddress[target.cartItemID] = address;
       this.cartService.updateItem(target.cartItemID, {
         startDate: target.rentalStartDate,
         endDate: target.rentalEndDate,
