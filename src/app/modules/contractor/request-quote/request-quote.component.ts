@@ -39,6 +39,13 @@ export class RequestQuoteComponent implements OnInit, OnDestroy {
   errorMessage = '';
   needsDocumentApproval = false;
   form: FormGroup;
+
+  // Place (suburb/city) autocomplete state
+  placeSuggestions: PlaceSuggestion[] = [];
+  placeSearching = false;
+  showPlaceDropdown = false;
+  private placeQuery$ = new Subject<string>();
+  private destroy$ = new Subject<void>();
   readonly minStartDateISO = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -50,7 +57,8 @@ export class RequestQuoteComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private listingService: ListingService,
-    private quotationService: QuotationService
+    private quotationService: QuotationService,
+    private locationService: LocationService
   ) {
     this.form = this.fb.group(
       {
@@ -60,6 +68,12 @@ export class RequestQuoteComponent implements OnInit, OnDestroy {
         hireType: ['Dry', Validators.required],
         fulfillmentMethod: ['Supplier Delivery', Validators.required],
         deliveryAddress: ['', [Validators.minLength(5), Validators.maxLength(300)]],
+        street: [''],
+        placeSearch: [''],
+        suburb: [''],
+        city: [''],
+        province: [''],
+        postalCode: [''],
         specialRequirements: ['', Validators.maxLength(500)],
         preferredContact: ['Email', Validators.required]
       },
@@ -71,7 +85,7 @@ export class RequestQuoteComponent implements OnInit, OnDestroy {
     this.placeQuery$.pipe(
       debounceTime(300),
       distinctUntilChanged(),
-      switchMap(q => {
+      switchMap((q: string) => {
         const query = (q || '').trim();
         if (query.length < 2) {
           this.placeSuggestions = [];
@@ -82,7 +96,7 @@ export class RequestQuoteComponent implements OnInit, OnDestroy {
         return this.locationService.search(query);
       }),
       takeUntil(this.destroy$)
-    ).subscribe(results => {
+    ).subscribe((results: PlaceSuggestion[]) => {
       this.placeSuggestions = results;
       this.placeSearching = false;
       this.showPlaceDropdown = results.length > 0;
