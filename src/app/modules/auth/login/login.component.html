@@ -37,6 +37,8 @@
         <div class="field-error" *ngIf="form.get('password')?.touched && form.get('password')?.errors?.['required']">
           Password is required.
         </div>
+      </div>
+      <div>
         <span class="auth-top-row__register">You do not have an Account? <a routerLink="/auth/register" class="link">Register</a></span>
       </div>
 
