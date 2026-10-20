@@ -1,0 +1,20 @@
+$bp-xs: 400px;
+$bp-sm: 640px;
+$bp-md: 768px;
+$bp-lg: 960px;
+$bp-xl: 1200px;
+
+@mixin mq($size) {
+  @if $size == xs { @media (max-width: $bp-xs) { @content; } }
+  @else if $size == sm { @media (max-width: $bp-sm) { @content; } }
+  @else if $size == md { @media (max-width: $bp-md) { @content; } }
+  @else if $size == lg { @media (max-width: $bp-lg) { @content; } }
+  @else if $size == xl { @media (max-width: $bp-xl) { @content; } }
+}
+
+@mixin mq-min($size) {
+  @if $size == sm { @media (min-width: $bp-sm) { @content; } }
+  @else if $size == md { @media (min-width: $bp-md) { @content; } }
+  @else if $size == lg { @media (min-width: $bp-lg) { @content; } }
+  @else if $size == xl { @media (min-width: $bp-xl) { @content; } }
+}

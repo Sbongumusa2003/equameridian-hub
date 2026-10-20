@@ -32,6 +32,12 @@
       <div class="info-row"><span>Payment method</span><strong>{{ invoice.paymentMethod || (invoice.totalAmount > 50000 ? 'EFT' : 'PayFast') }}</strong></div>
     </div>
 
+    
+    <div class="alert alert--info pay-here-banner" *ngIf="canPay">
+      <strong>Pay on this page.</strong>
+      Use the <strong>Pay Now</strong> button on the right (or below on mobile) to complete payment.
+      Online card/instant EFT is available for smaller amounts; larger totals may require bank transfer with proof upload.
+    </div>
     <div class="panel">
       <div class="panel__title">Amount Breakdown</div>
       <div class="info-row"><span>Rental Subtotal</span><strong>R {{ invoice.subtotal | number:'1.2-2' }}</strong></div>
@@ -75,7 +81,7 @@
         <p class="text-muted fs-12" *ngIf="proofName">Selected: {{ proofName }}</p>
       </div>
       <button *ngIf="!isPaid && !eft" class="btn btn--primary w-full" [disabled]="paying" (click)="payNow()">
-        {{ paying ? 'Starting checkout...' : 'Pay Now' }}
+        {{ paying ? 'Starting checkout...' : 'Pay this invoice now' }}
       </button>
       <button *ngIf="!isPaid && !eft" class="btn btn--ghost w-full mt-8" [disabled]="paying" (click)="payNow()">
         Check if EFT applies

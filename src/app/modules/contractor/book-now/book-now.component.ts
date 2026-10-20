@@ -95,10 +95,13 @@ export class BookNowComponent implements OnInit, OnDestroy {
     });
 
     const listingId = Number(this.route.snapshot.paramMap.get('listingId'));
-    this.listingService.contractorGetById(listingId).subscribe({
+    this.listingService.contractorGetById(listingId).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: l => {
         this.listing = l;
         this.loading = false;
+        this.errorMessage = '';
         this.form.get('quantity')?.setValidators([
           Validators.required, Validators.min(1), Validators.max(Math.max(1, l.unitsAvailable))
         ]);
@@ -109,10 +112,23 @@ export class BookNowComponent implements OnInit, OnDestroy {
           fulfillmentMethod: l.deliveryAvailable ? 'Supplier Delivery' : 'Contractor Pickup'
         });
         this.onFulfillmentMethodChange();
-        this.form.get('fulfillmentMethod')?.valueChanges.subscribe(() => this.onFulfillmentMethodChange());
+        this.form.get('fulfillmentMethod')?.valueChanges.pipe(
+          takeUntil(this.destroy$)
+        ).subscribe(() => this.onFulfillmentMethodChange());
       },
-      error: () => { this.loading = false; }
+      error: err => {
+        this.loading = false;
+        this.listing = null;
+        this.errorMessage = err?.error?.message
+          || 'Could not load this listing. It may be unavailable or the link is invalid.';
+      }
     });
+  }
+
+  retryLoad() {
+    this.loading = true;
+    this.errorMessage = '';
+    this.ngOnInit();
   }
 
   ngOnDestroy() {

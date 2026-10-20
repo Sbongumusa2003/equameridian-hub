@@ -5,6 +5,14 @@
 </div>
 
 <div class="loading-state" *ngIf="loading">Loading listing...</div>
+<div class="panel" *ngIf="!loading && !listing && loadError">
+  <div class="alert alert--error">{{ loadError }}</div>
+  <div class="action-btns mt-16">
+    <button type="button" class="btn btn--primary" (click)="retryLoad()">Try again</button>
+    <a class="btn btn--outline" routerLink="/contractor/browse">Back to browse</a>
+  </div>
+</div>
+
 <div class="empty-state" *ngIf="!loading && !listing">Listing not found.</div>
 
 <div class="page-layout" *ngIf="!loading && listing">

@@ -28,6 +28,9 @@ export class CartComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
   checkingOut = false;
+  clearingCart = false;
+  /** Shows the "clear entire cart" confirmation panel. */
+  confirmClear = false;
   checkoutResults: CheckoutResultBookingDto[] | null = null;
 
   promoCode = '';
@@ -123,6 +126,17 @@ export class CartComponent implements OnInit, OnDestroy {
       },
       error: () => { this.loading = false; this.error = 'Could not load your cart.'; }
     });
+  }
+
+  /** Apply a cart payload from the API without an extra GET (avoids reload storms). */
+  private applyCart(cart: CartDto, withPromoFeedback = false) {
+    this.cart = cart;
+    this.seedLineDraftsFromCart();
+    this.hydrateShippingFromCart();
+    if (withPromoFeedback) {
+      this.promoOk = !!cart.promoValid;
+      this.promoFeedback = cart.promoMessage || (cart.promoValid ? 'Promo applied.' : 'Invalid promo code.');
+    }
   }
 
   /** Initialise structured drafts from existing delivery addresses. */
@@ -250,9 +264,10 @@ export class CartComponent implements OnInit, OnDestroy {
       fulfillmentMethod: item.fulfillmentMethod,
       deliveryAddress: item.deliveryAddress
     }).subscribe({
-      next: () => {
+      next: cart => {
         this.savingItemId = null;
-        this.load(!!this.promoCode.trim());
+        this.error = '';
+        this.applyCart(cart);
       },
       error: err => {
         this.savingItemId = null;
@@ -264,9 +279,10 @@ export class CartComponent implements OnInit, OnDestroy {
   removeItem(item: CartItemDto) {
     this.savingItemId = item.cartItemID;
     this.cartService.removeItem(item.cartItemID).subscribe({
-      next: () => {
+      next: cart => {
         this.savingItemId = null;
-        this.load(!!this.promoCode.trim());
+        this.error = '';
+        this.applyCart(cart);
       },
       error: () => { this.savingItemId = null; this.error = 'Could not remove that item.'; }
     });
@@ -323,7 +339,11 @@ export class CartComponent implements OnInit, OnDestroy {
 
   setAllFulfillment(method: string) {
     if (!this.cart) return;
-    this.cart.supplierGroups.flatMap(g => g.items).forEach(item => this.setFulfillment(item, method));
+    this.cart.supplierGroups.flatMap(g => g.items).forEach(item => {
+      if (method === 'Contractor Pickup' && !this.canPickup(item)) return;
+      if (method === 'Supplier Delivery' && !this.canDeliver(item)) return;
+      this.setFulfillment(item, method);
+    });
   }
 
   saveShipping() {
@@ -348,8 +368,29 @@ export class CartComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** True when the listing allows contractor pickup (defaults true if API omits flag). */
+  canPickup(item: CartItemDto): boolean {
+    return item.pickupAvailable !== false;
+  }
+
+  /** True when the listing allows supplier delivery (defaults false if API omits flag — safer). */
+  canDeliver(item: CartItemDto): boolean {
+    // If the flag is present use it; if missing (older API) allow delivery so existing carts still work.
+    if (item.deliveryAvailable === undefined || item.deliveryAvailable === null) return true;
+    return !!item.deliveryAvailable;
+  }
+
   setFulfillment(item: CartItemDto, method: string) {
+    if (method === 'Contractor Pickup' && !this.canPickup(item)) {
+      this.error = 'This listing does not offer contractor pickup. Please choose Supplier Delivery.';
+      return;
+    }
+    if (method === 'Supplier Delivery' && !this.canDeliver(item)) {
+      this.error = 'This listing does not offer supplier delivery. Please choose Contractor Pickup.';
+      return;
+    }
     this.savingItemId = item.cartItemID;
+    this.error = '';
     const address = method === 'Contractor Pickup'
       ? (item.deliveryAddress || '')
       : (this.draftAddress[item.cartItemID] || item.deliveryAddress || '').trim();
@@ -360,13 +401,16 @@ export class CartComponent implements OnInit, OnDestroy {
       fulfillmentMethod: method,
       deliveryAddress: address
     }).subscribe({
-      next: () => {
+      next: cart => {
         this.savingItemId = null;
-        this.load(!!this.promoCode.trim());
+        this.error = '';
+        this.applyCart(cart);
       },
       error: err => {
         this.savingItemId = null;
         this.error = err?.error?.message || 'Could not update fulfilment.';
+        // Re-sync from server so radio [checked] bindings match reality.
+        this.load(!!this.promoCode.trim());
       }
     });
   }
@@ -388,10 +432,10 @@ export class CartComponent implements OnInit, OnDestroy {
       fulfillmentMethod: item.fulfillmentMethod || 'Supplier Delivery',
       deliveryAddress: address
     }).subscribe({
-      next: () => {
+      next: cart => {
         this.savingItemId = null;
-        // Keep draft so the fields stay filled after reload seed.
-        this.load(!!this.promoCode.trim());
+        this.error = '';
+        this.applyCart(cart);
       },
       error: err => {
         this.savingItemId = null;
@@ -439,11 +483,22 @@ export class CartComponent implements OnInit, OnDestroy {
 
   checkout() {
     if (!this.cart || this.cart.itemCount === 0) return;
+    // Block checkout when any line has a fulfilment method the listing does not support.
+    const invalidMethod = this.cart.supplierGroups.flatMap(g => g.items).find(i => {
+      const isPickup = (i.fulfillmentMethod || '') === 'Contractor Pickup';
+      if (isPickup && !this.canPickup(i)) return true;
+      if (!isPickup && !this.canDeliver(i)) return true;
+      return false;
+    });
+    if (invalidMethod) {
+      this.error = `"${invalidMethod.listingTitle}" does not support the selected fulfilment method. Choose a valid option before checkout.`;
+      return;
+    }
     if (this.needsShipping) {
       const missing = this.cart.supplierGroups.flatMap(g => g.items)
         .some(i => (i.fulfillmentMethod || '') !== 'Contractor Pickup' && !(i.deliveryAddress || '').trim());
       if (missing) {
-        this.error = 'Add a delivery address on Book Now, or switch those items to Contractor Pickup.';
+        this.error = 'Add a delivery address for delivery items, or switch those items to Contractor Pickup.';
         return;
       }
     }
@@ -470,6 +525,109 @@ export class CartComponent implements OnInit, OnDestroy {
 
   goToLease(leaseAgreementId: number) {
     this.router.navigate(['/transactions/lease-agreements', leaseAgreementId]);
+  }
+
+  /** Payment lives on the invoice detail page (Pay Now / EFT), not on the lease. */
+  goToInvoice(invoiceId: number) {
+    this.router.navigate(['/transactions/invoices', invoiceId]);
+  }
+
+  /** Navigate back in history, or to browse if there is no prior page in this session. */
+  goBack() {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    this.router.navigate(['/contractor/browse']);
+  }
+
+  /** Leave cart without placing an order; items stay in the cart. */
+  leaveCart() {
+    if (this.checkingOut || this.clearingCart) return;
+    this.confirmClear = false;
+    this.router.navigate(['/contractor/browse']);
+  }
+
+  /** Open confirmation before wiping the cart. */
+  requestClearCart() {
+    if (this.checkingOut || this.clearingCart) return;
+    if (!this.cart || this.cart.itemCount === 0) {
+      this.leaveCart();
+      return;
+    }
+    this.confirmClear = true;
+  }
+
+  dismissClearConfirm() {
+    this.confirmClear = false;
+  }
+
+  /**
+   * After confirm: remove all items sequentially, clear local state, leave page.
+   * Does not create bookings.
+   */
+  confirmClearCart() {
+    if (this.checkingOut || this.clearingCart) return;
+    this.confirmClear = false;
+    this.error = '';
+    this.clearLocalCartState();
+
+    const ids = this.cart
+      ? this.cart.supplierGroups.flatMap(g => g.items.map(i => i.cartItemID))
+      : [];
+
+    if (ids.length === 0) {
+      this.cart = null;
+      this.router.navigate(['/contractor/browse']);
+      return;
+    }
+
+    this.clearingCart = true;
+    this.cartService.clearCart(ids).subscribe({
+      next: () => {
+        this.clearingCart = false;
+        this.cart = null;
+        this.router.navigate(['/contractor/browse']);
+      },
+      error: () => {
+        this.clearingCart = false;
+        this.cart = null;
+        this.error = 'Some items could not be removed. Refresh the cart to check.';
+        this.router.navigate(['/contractor/browse']);
+      }
+    });
+  }
+
+  /** @deprecated use requestClearCart / leaveCart — kept as alias for templates. */
+  cancelCheckout() {
+    this.requestClearCart();
+  }
+
+  private clearLocalCartState() {
+    this.promoCode = '';
+    this.promoFeedback = '';
+    this.promoOk = false;
+    this.draftAddress = {};
+    this.lineDrafts = {};
+    this.placeSuggestions = {};
+    this.shipStreet = '';
+    this.shipSuburb = '';
+    this.shipCity = '';
+    this.shipProvince = 'Gauteng';
+    this.shipPostal = '';
+    this.shipNotes = '';
+    this.shipError = '';
+    try {
+      sessionStorage.removeItem('em.ship');
+      sessionStorage.removeItem('em.shipAddress');
+    } catch { /* ignore */ }
+  }
+
+  /** Step indicator: 1 cart review, 2 processing, 3 done (lease). */
+  get checkoutStep(): 1 | 2 | 3 {
+    if (this.checkoutResults) return 3;
+    if (this.checkingOut) return 2;
+    return 1;
   }
 
   isPickup(item: CartItemDto): boolean {

@@ -4,7 +4,10 @@
   </div>
   <div class="page-header__sub">
     <app-context-help topic="invoices"></app-context-help>
-    <p>View invoices generated for your accepted quotations.</p>
+    <p>
+      This is where you <strong>make payment</strong>. Open an unpaid invoice, then click
+      <strong>Pay Now</strong> on that page (or follow EFT instructions for larger amounts).
+    </p>
   </div>
 </div>
 
@@ -33,7 +36,16 @@
         <td>R {{ inv.totalAmount | number }}</td>
         <td><app-status-badge [status]="inv.paymentStatus"></app-status-badge></td>
         <td class="action-cell">
-          <a class="btn btn--sm btn--outline" [routerLink]="['/transactions/invoices', inv.invoiceID]">View</a>
+          <a class="btn btn--sm btn--primary"
+             *ngIf="(inv.paymentStatus || '').toLowerCase() !== 'paid' && (inv.paymentStatus || '').toLowerCase() !== 'cancelled'"
+             [routerLink]="['/transactions/invoices', inv.invoiceID]">
+            Open to pay
+          </a>
+          <a class="btn btn--sm btn--outline"
+             *ngIf="(inv.paymentStatus || '').toLowerCase() === 'paid' || (inv.paymentStatus || '').toLowerCase() === 'cancelled'"
+             [routerLink]="['/transactions/invoices', inv.invoiceID]">
+            View
+          </a>
           <button type="button" class="btn btn--sm btn--ghost" (click)="downloadPdf(inv.invoiceID)">PDF</button>
         </td>
       </tr>

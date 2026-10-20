@@ -39,6 +39,10 @@ export interface CartItemDto {
   vatRate: number;
   priceInclVat: number;
   isAvailable: boolean;
+  /** Whether the listing allows contractor pickup at the supplier yard. */
+  pickupAvailable: boolean;
+  /** Whether the listing allows supplier delivery to a customer address. */
+  deliveryAvailable: boolean;
 }
 
 export interface CartSupplierGroupDto {

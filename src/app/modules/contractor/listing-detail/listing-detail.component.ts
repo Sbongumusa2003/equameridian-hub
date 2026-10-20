@@ -18,6 +18,7 @@ import { CampaignDto } from '../../../core/models/campaign.models';
 export class ListingDetailComponent implements OnInit {
   listing: ListingDto | null = null;
   loading = true;
+  loadError = '';
   activeImage = 0;
   activePromo: CampaignDto | null = null;
 
@@ -48,10 +49,16 @@ export class ListingDetailComponent implements OnInit {
       next: l => {
         this.listing = l;
         this.loading = false;
+        this.loadError = '';
         this.loadReviews();
         this.loadActivePromo(id);
       },
-      error: () => { this.loading = false; }
+      error: err => {
+        this.loading = false;
+        this.listing = null;
+        this.loadError = err?.error?.message
+          || 'Could not load this listing. It may have been removed or is unavailable.';
+      }
     });
     if (this.auth.isLoggedIn && this.auth.role === 'contractor') {
       this.wishlist.refreshIds();
@@ -127,6 +134,12 @@ export class ListingDetailComponent implements OnInit {
 
   aspectKeys(ratings: { [key: string]: number }): string[] {
     return Object.keys(ratings || {});
+  }
+
+  retryLoad() {
+    this.loading = true;
+    this.loadError = '';
+    this.ngOnInit();
   }
 
   resolveUrl(path: string | undefined | null): string {

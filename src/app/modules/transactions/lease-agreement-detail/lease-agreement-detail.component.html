@@ -143,6 +143,31 @@
       <h4>You've signed this agreement</h4>
       <p class="fs-13 text-secondary-color">Waiting for the other party to countersign.</p>
     </div>
+    <div class="panel next-pay-panel">
+      <div class="panel__title">How to pay</div>
+      <ol class="next-pay-steps">
+        <li *ngIf="!agreement.contractorSigned || !agreement.supplierSigned">
+          <strong>Sign this lease</strong>
+          <span class="text-muted"> — both parties must sign before fulfilment continues.</span>
+        </li>
+        <li>
+          <strong>Open your invoice</strong>
+          <span class="text-muted"> — payment is on the Invoice page, not here.</span>
+        </li>
+        <li>
+          <strong>Click “Pay Now”</strong>
+          <span class="text-muted"> — on the invoice to pay online (or use EFT if shown).</span>
+        </li>
+      </ol>
+      <a class="btn btn--primary btn--full"
+         routerLink="/transactions/invoices">
+        Go to Invoices to pay
+      </a>
+      <p class="text-muted fs-12 mt-8">
+        Choose the invoice that matches this booking, open it, then use <strong>Pay Now</strong>.
+      </p>
+    </div>
+
     <div class="info-panel">
       <h4>Related</h4>
       <a class="quick-action" routerLink="/transactions/bookings">View Bookings</a>

@@ -1,6 +1,9 @@
 <div class="cart-page">
   <div class="page-header">
   <div class="page-header__title">
+    <button type="button" class="btn btn--ghost btn--back" (click)="goBack()" aria-label="Go back">
+      ← Back
+    </button>
     <h1>Shopping Cart</h1>
   </div>
   <div class="page-header__sub">
@@ -9,12 +12,18 @@
   </div>
 </div>
 
-  <div class="checkout-steps" *ngIf="cart && cart.itemCount > 0 && !checkoutResults">
-    <div class="checkout-step checkout-step--active"><span class="step-num">1</span> Cart</div>
-    <div class="checkout-step-line"></div>
-    <div class="checkout-step"><span class="step-num">2</span> Checkout</div>
-    <div class="checkout-step-line"></div>
-    <div class="checkout-step"><span class="step-num">3</span> Lease &amp; pay</div>
+  <div class="checkout-steps" *ngIf="(cart && cart.itemCount > 0) || checkoutResults || checkingOut">
+    <div class="checkout-step" [class.checkout-step--active]="checkoutStep === 1" [class.checkout-step--done]="checkoutStep > 1">
+      <span class="step-num">1</span> Cart
+    </div>
+    <div class="checkout-step-line" [class.checkout-step-line--done]="checkoutStep > 1"></div>
+    <div class="checkout-step" [class.checkout-step--active]="checkoutStep === 2" [class.checkout-step--done]="checkoutStep > 2">
+      <span class="step-num">2</span> Checkout
+    </div>
+    <div class="checkout-step-line" [class.checkout-step-line--done]="checkoutStep > 2"></div>
+    <div class="checkout-step" [class.checkout-step--active]="checkoutStep === 3">
+      <span class="step-num">3</span> Lease &amp; pay
+    </div>
   </div>
 
   <div class="alert alert--error" *ngIf="error">{{ error }}</div>
@@ -25,18 +34,46 @@
   <div class="panel order-confirmation" *ngIf="checkoutResults">
     <div class="order-confirmation__icon">✅</div>
     <h2>Order confirmed</h2>
-    <p class="text-muted">Your booking{{ checkoutResults.length === 1 ? '' : 's' }} {{ checkoutResults.length === 1 ? 'has' : 'have' }} been created. Sign the lease agreement and pay the invoice to proceed.</p>
+    <p class="text-muted">
+      Your booking{{ checkoutResults.length === 1 ? '' : 's' }}
+      {{ checkoutResults.length === 1 ? 'has' : 'have' }} been created.
+      Payment is <strong>not</strong> taken on this page — follow the steps below.
+    </p>
+
+    <div class="next-steps" aria-label="What to do next">
+      <h3 class="next-steps__title">How to complete payment</h3>
+      <ol class="next-steps__list">
+        <li><strong>Sign the lease</strong> — both you and the supplier must sign the lease agreement.</li>
+        <li><strong>Open the invoice</strong> — go to <em>Transactions → Invoices</em>, or use the button below.</li>
+        <li><strong>Click Pay Now</strong> — on the invoice page you can pay online (or follow EFT instructions for larger amounts).</li>
+      </ol>
+      <p class="next-steps__hint text-muted">
+        Tip: Looking for the pay button? It only appears on the <strong>Invoice</strong> screen, not on the lease.
+      </p>
+    </div>
+
     <div class="cart-line cart-line--confirm" *ngFor="let booking of checkoutResults">
       <div class="cart-line__main">
         <div class="cart-line__title">{{ booking.listingTitle }}</div>
-        <div class="cart-line__meta text-muted">Booking #{{ booking.bookingID }} · Invoice {{ booking.invoiceNumber }}</div>
+        <div class="cart-line__meta text-muted">
+          Booking #{{ booking.bookingID }} · Invoice {{ booking.invoiceNumber }}
+        </div>
       </div>
       <div class="cart-line__price">
         <div class="cart-line__now">R {{ booking.totalAmount | number:'1.2-2' }}</div>
       </div>
-      <button type="button" class="btn btn--sm btn--primary" (click)="goToLease(booking.leaseAgreementID)">View lease &amp; pay</button>
+      <div class="cart-line__actions">
+        <button type="button" class="btn btn--sm btn--primary"
+                (click)="goToLease(booking.leaseAgreementID)">
+          1. Sign lease
+        </button>
+        <button type="button" class="btn btn--sm btn--outline"
+                (click)="goToInvoice(booking.invoiceID)">
+          2. Open invoice to pay
+        </button>
+      </div>
     </div>
-    <a routerLink="/contractor/browse" class="btn btn--outline mt-16">Continue browsing</a>
+    <a routerLink="/contractor/browse" class="btn btn--ghost mt-16">Continue browsing</a>
   </div>
 
   <div class="loading-state" *ngIf="loading && !checkoutResults">Loading cart…</div>
@@ -48,7 +85,7 @@
     <a routerLink="/contractor/browse" class="btn btn--primary mt-16">Browse machinery</a>
   </div>
 
-  <div class="checkout-layout" *ngIf="!loading && !checkoutResults && cart && cart.itemCount > 0">
+  <div class="checkout-layout" *ngIf="!loading && !checkoutResults && cart && cart.itemCount > 0" [class.checkout-layout--busy]="checkingOut || clearingCart">
     <div class="checkout-main">
       <div class="panel cart-group" *ngFor="let group of cart.supplierGroups">
         <div class="panel__title">{{ group.supplierCompany }}</div>
@@ -66,20 +103,28 @@
               · {{ item.rentalDurationDays }} day{{ item.rentalDurationDays === 1 ? '' : 's' }}
             </div>
             <div class="fulfillment-row">
-              <label class="fulfillment-option">
+              <label class="fulfillment-option" [class.fulfillment-option--disabled]="!canPickup(item)"
+                     [title]="!canPickup(item) ? 'This listing does not offer contractor pickup' : ''">
                 <input type="radio" name="fulfill-{{ item.cartItemID }}"
                        [checked]="item.fulfillmentMethod === 'Contractor Pickup'"
                        (change)="setFulfillment(item, 'Contractor Pickup')"
-                       [disabled]="savingItemId === item.cartItemID" />
+                       [disabled]="savingItemId === item.cartItemID || !canPickup(item)" />
                 Pickup
               </label>
-              <label class="fulfillment-option">
+              <label class="fulfillment-option" [class.fulfillment-option--disabled]="!canDeliver(item)"
+                     [title]="!canDeliver(item) ? 'This listing does not offer supplier delivery' : ''">
                 <input type="radio" name="fulfill-{{ item.cartItemID }}"
                        [checked]="item.fulfillmentMethod !== 'Contractor Pickup'"
                        (change)="setFulfillment(item, 'Supplier Delivery')"
-                       [disabled]="savingItemId === item.cartItemID" />
+                       [disabled]="savingItemId === item.cartItemID || !canDeliver(item)" />
                 Delivery
               </label>
+            </div>
+            <div class="cart-line__meta text-muted fulfillment-hint"
+                 *ngIf="!canPickup(item) || !canDeliver(item)">
+              <span *ngIf="canPickup(item) && !canDeliver(item)">Pickup only — supplier does not deliver this item.</span>
+              <span *ngIf="!canPickup(item) && canDeliver(item)">Delivery only — supplier does not offer yard pickup.</span>
+              <span *ngIf="!canPickup(item) && !canDeliver(item)">No fulfilment method available for this listing — remove it from the cart.</span>
             </div>
             <div class="cart-line__meta text-muted" *ngIf="item.fulfillmentMethod === 'Contractor Pickup'">
               Collect from {{ item.deliveryAddress }} · no delivery fee
@@ -193,14 +238,48 @@
           <span>Total (incl. VAT)</span>
           <strong>R {{ cart.grandTotal | number:'1.2-2' }}</strong>
         </div>
-        <button type="button" class="btn btn--primary btn--full mt-16"
-                [disabled]="checkingOut || cart.hasUnavailableItems"
+        <button type="button" class="btn btn--primary btn--full mt-16 btn--checkout"
+                [disabled]="checkingOut || clearingCart || cart.hasUnavailableItems"
                 (click)="checkout()">
-          {{ checkingOut ? 'Processing…' : 'Proceed to checkout' }}
+          <span class="btn-spinner" *ngIf="checkingOut" aria-hidden="true"></span>
+          <span>{{ checkingOut ? 'Processing checkout…' : 'Proceed to checkout' }}</span>
         </button>
+        <button type="button" class="btn btn--outline btn--full mt-8"
+                [disabled]="checkingOut || clearingCart"
+                (click)="leaveCart()">
+          Leave cart
+        </button>
+        <button type="button" class="btn btn--ghost btn--full mt-8 btn--danger-text"
+                [disabled]="checkingOut || clearingCart"
+                (click)="requestClearCart()">
+          Cancel &amp; clear cart
+        </button>
+
+        <div class="checkout-loading" *ngIf="checkingOut" role="status" aria-live="polite">
+          <span class="checkout-loading__spinner" aria-hidden="true"></span>
+          <span class="checkout-loading__text">Creating your booking and lease…</span>
+        </div>
+        <div class="checkout-loading" *ngIf="clearingCart" role="status" aria-live="polite">
+          <span class="checkout-loading__spinner" aria-hidden="true"></span>
+          <span class="checkout-loading__text">Clearing your cart…</span>
+        </div>
+
+        <div class="confirm-clear" *ngIf="confirmClear" role="dialog" aria-modal="true" aria-labelledby="confirmClearTitle">
+          <p id="confirmClearTitle" class="confirm-clear__title">Clear the entire cart?</p>
+          <p class="confirm-clear__body text-muted">
+            This removes every item. No booking will be created. This cannot be undone.
+          </p>
+          <div class="confirm-clear__actions">
+            <button type="button" class="btn btn--sm btn--outline" (click)="dismissClearConfirm()">Keep cart</button>
+            <button type="button" class="btn btn--sm btn--primary" (click)="confirmClearCart()">Yes, clear all</button>
+          </div>
+        </div>
+
         <p class="checkout-note text-muted">
           You will sign a lease agreement and pay the invoice after checkout. Amounts are in ZAR.
           Contractor pickup is not charged a delivery fee.
+          <strong>Leave cart</strong> keeps your items.
+          <strong>Cancel &amp; clear cart</strong> removes everything after you confirm.
         </p>
       </div>
     </aside>
